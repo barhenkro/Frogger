@@ -5,7 +5,18 @@ data segment
    holes db 64 dup(2h)
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
-   floor db 5h
+   floor db 5
+   frog db 0Ah,0Eh,2 dup(0Ah),2 dup(0Eh),2 dup(0Ah)
+        db 2 dup(0Ah),0Dh,0Ah,3 dup(0Eh),0Ah,0Dh, 2 dup(0Ah)
+        db 3 dup(0Ah),3 dup(0Eh),3 dup(0Ah)
+        db 2 dup(0Ah),7 dup(0Eh),2 dup(0Ah)
+        db 0Eh,0Ah,5 dup(0Eh)
+        db 2 dup(0Ah),0Eh,0Ah,5 dup(0Eh),2 dup(0Ah)
+        db 2 dup(0Ah),0Eh,0Ah,3 dup(0Eh),2 dup(0Ah)
+        db 3 dup(0Ah),2 dup(0Eh),4 dup(0Ah)
+        db 2 dup(0Ah)
+        
+        
     
 ends
 
