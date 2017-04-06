@@ -1,10 +1,12 @@
 ; multi-segment executable file template.
 
 data segment
+   Frog_location dw 57760 ;the middle of the first floor line 180,col 160 locatio=57760
    holes db 64 dup(2h)
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
    floor db 5h
+    
 ends
 
 stack segment
@@ -93,6 +95,19 @@ proc draw_water
     endp draw_water 
 ;-----------------------------------------------------------------
 
+
+;******************************************************************
+;gets location to start drawing the frog trough variable frog_location
+;draws the frog there
+;******************************************************************
+proc draw_frog
+    pusha
+    
+    popa
+    ret
+    endp draw_frog
+
+
 ;******************************************************************
 ;gets void
 ;draws the non moving elements to the screen
@@ -104,7 +119,7 @@ proc draw_screen
     mov es,ax
     
     ;drawing holes
-    mov di,9600   ;line 20 on the scrren 30*320=9600
+    mov di,6400   ;line 20 on the scrren 20*320=6400
     mov cx,5
     holes_part:
     call Draw_hole
@@ -112,13 +127,13 @@ proc draw_screen
     loop holes_part
     
     ;drawing water    
-    mov di,16000       ;50*320=16000
+    mov di,12800       ;40*320=12800
     call draw_water
     
     ;drawing floor
-     mov di,32000  ;320*100=32000
+     mov di,28800  ;320*90=28800
      call draw_Floor
-     mov di, 54400 ;170*320=17000
+     mov di, 51200 ;160*320=51200
      call draw_floor
     
     
@@ -126,8 +141,8 @@ proc draw_screen
     popa
     ret
     endp draw_screen
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;-----------------------------------------------------------------
+
 
 
 
@@ -142,8 +157,6 @@ start:
     
     
     call Init_Graphics
-    ;xor di,di
-;    call draw_Floor
     call draw_screen
     
     mov ax, 4C00h
