@@ -1,7 +1,7 @@
 ; multi-segment executable file template.
 
 data segment
-   Frog_location dw 57760 ;the middle of the first floor line 180,col 160 locatio=57760
+   Frog_location dw 54560 ;the middle of the first floor line 170,col 160 locatio=57760
    holes db 64 dup(2h)
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
@@ -113,6 +113,69 @@ proc draw_water
 ;******************************************************************
 proc draw_frog
     pusha
+    mov di, frog_location
+    sub di, 2560 ;moving to the head of the frog
+    mov si, offset frog
+    ;line:1
+    movsb
+    add di,2 ;space of two pixels
+    mov cx,5
+    rep movsb
+    add di,2
+    movsb
+    ;line:2
+    add di,308 ;new line
+    movsb
+    movsb
+    add di,1 ;space
+    mov cx,7
+    rep movsb
+    add di,1 ;space
+    movsb
+    movsb
+    ;line:3
+    add di, 308 ;new line
+    movsb 
+    add di,1 ;space
+    mov cx,7
+    rep movsb
+    add di,1
+    movsb
+    ;line:4
+    add di,309 ;new line
+    mov cx,11
+    rep movsb
+    ;lien:5
+    add di,311 ;new line
+    mov cx,7
+    rep movsb
+    ;line:6
+    add di,311 ;new line
+    mov cx,11
+    rep movsb
+    ;line:7
+    add di,309 ;new line
+    movsb
+    add di,1 ;space
+    mov cx,7
+    rep movsb
+    add di,1 ;sapce
+    movsb
+    ;line:8
+    add di,308 ;new line
+    movsb
+    movsb
+    add di,2
+    mov cx,5
+    rep movsb
+    add di,2
+    movsb
+    movsb
+    ;Line 9
+    add di, 309
+    movsb
+    add di,9
+    movsb
     
     popa
     ret
@@ -146,6 +209,8 @@ proc draw_screen
      call draw_Floor
      mov di, 51200 ;160*320=51200
      call draw_floor
+     
+     call draw_frog
     
     
     
@@ -163,12 +228,13 @@ start:
     mov ds, ax
 
     ; add your code here
-   ; mov ax, 0A000h
-;    mov es,ax
+    mov ax, 0A000h
+    mov es,ax
     
     
     call Init_Graphics
     call draw_screen
+    
     
     mov ax, 4C00h
     int 21h 
