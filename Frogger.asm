@@ -1,20 +1,20 @@
 ; multi-segment executable file template.
 
 data segment
-   Frog_location dw 54560 ;the middle of the first floor line 170,col 160 locatio=57760
+   Frog_location dw 52320 ;the middle of the first floor;
    holes db 64 dup(2h)
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
-   floor db 5
-   frog db 0Ah,0Eh,2 dup(0Ah),2 dup(0Eh),2 dup(0Ah)
-        db 2 dup(0Ah),0Dh,0Ah,3 dup(0Eh),0Ah,0Dh, 2 dup(0Ah)
-        db 3 dup(0Ah),3 dup(0Eh),3 dup(0Ah)
-        db 2 dup(0Ah),7 dup(0Eh),2 dup(0Ah)
-        db 0Eh,0Ah,5 dup(0Eh)
-        db 2 dup(0Ah),0Eh,0Ah,5 dup(0Eh),2 dup(0Ah)
-        db 2 dup(0Ah),0Eh,0Ah,3 dup(0Eh),2 dup(0Ah)
-        db 3 dup(0Ah),2 dup(0Eh),4 dup(0Ah)
-        db 2 dup(0Ah)
+   floor db 5                                                   
+   frog db 0Ah,0Eh,2 dup(0Ah),2 dup(0Eh),0Ah                    ;1
+        db 2 dup(0Ah),0Ch,0Ah,3 dup(0Eh),0Ah,0Ch, 2 dup(0Ah)      ;2
+        db 3 dup(0Ah),3 dup(0Eh),3 dup(0Ah)                     ;3
+        db 2 dup(0Ah),7 dup(0Eh),2 dup(0Ah)                     ;4
+        db 0Eh,0Ah,5 dup(0Eh)                                   ;5
+        db 2 dup(0Ah),0Eh,0Ah,5 dup(0Eh),2 dup(0Ah)             ;6
+        db 2 dup(0Ah),0Eh,0Ah,3 dup(0Eh),2 dup(0Ah)             ;7
+        db 3 dup(0Ah),2 dup(0Eh),4 dup(0Ah)                     ;8
+        db 2 dup(0Ah)                                           ;9
         
         
     
@@ -76,7 +76,7 @@ endp Draw_hole
 
 ;******************************************************************
 ;gets location trogh di to start drawing the floor
-;draws 10 lines of the floor
+;draws 15 lines of the floor
 ;******************************************************************
 proc draw_Floor
     pusha
@@ -114,7 +114,6 @@ proc draw_water
 proc draw_frog
     pusha
     mov di, frog_location
-    sub di, 2560 ;moving to the head of the frog
     mov si, offset frog
     ;line:1
     movsb
@@ -172,7 +171,7 @@ proc draw_frog
     movsb
     movsb
     ;Line 9
-    add di, 309
+    add di, 308
     movsb
     add di,9
     movsb
