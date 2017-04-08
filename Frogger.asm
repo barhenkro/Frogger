@@ -77,11 +77,11 @@ endp Draw_hole
 
 ;******************************************************************
 ;gets location trogh di to start drawing the floor
-;draws 15 lines of the floor
+;draws 13 lines of the floor
 ;******************************************************************
 proc draw_Floor
     pusha
-    mov cx, 4800 ; 15 lines = 15*320=4800 pixels
+    mov cx, 4160 ; 13 lines = 13*320=4160 pixels
     floor_lines:
     mov si, offset floor
     movsb
@@ -93,12 +93,12 @@ proc draw_Floor
 
 ;******************************************************************
 ;gets location in di to draw the water part 
-;draws 50*320 pixels of water
+;draws 65*320 pixels of water
 ;******************************************************************
 proc draw_water
     pusha
     popa
-    mov cx,16000 ; 50 lines 50*320=16000
+    mov cx,20800 ; 65 lines 65*320=20800
     watering:
     mov si, offset water
     movsb
@@ -215,7 +215,7 @@ proc draw_screen
     mov es,ax
     
     ;drawing holes
-    mov di,6400   ;line 20 on the scrren 20*320=6400
+    xor di,di   ;line 0 
     mov cx,5
     holes_part:
     call Draw_hole
@@ -223,16 +223,16 @@ proc draw_screen
     loop holes_part
     
     ;drawing water    
-    mov di,12800       ;40*320=12800
+    mov di,6400       ;20*320=6400
     call draw_water
     
     ;drawing floor
-     mov di,28800  ;320*90=28800
+     mov di,27200  ;320*85=27200
      call draw_Floor
-     mov di, 51200 ;160*320=51200
+     mov di, 52160 ;163*320=52160
      call draw_floor
      
-     call draw_frog
+     
      
     
     
