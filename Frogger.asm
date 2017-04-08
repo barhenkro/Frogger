@@ -1,7 +1,8 @@
 ; multi-segment executable file template.
 
 data segment
-   Frog_location dw 52320 ;the middle of the first floor;
+   Frog_location dw 52320 ;the middle of the first floor line:163,colum:160 
+   key db ?
    holes db 64 dup(2h)
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
@@ -178,7 +179,29 @@ proc draw_frog
     
     popa
     ret
-    endp draw_frog
+endp draw_frog
+;----------------------------------------------------------------- 
+
+;******************************************************************
+;gets nothing
+;retutrns a key trough variable key
+;******************************************************************
+
+proc get_key
+    pusha
+    mov key,0
+    mov ah,1h
+    int 16h
+    jz skip
+    xor ah,ah
+    int 16h
+    mov key,al
+     skip:
+    popa
+    ret 
+endp get_key
+
+;-----------------------------------------------------------------    
 
 
 ;******************************************************************
@@ -210,6 +233,7 @@ proc draw_screen
      call draw_floor
      
      call draw_frog
+     
     
     
     
