@@ -1,12 +1,12 @@
 ; multi-segment executable file template.
 
 data segment
-   Frog_location dw 52320 ;the middle of the first floor line:163,colum:160 
+   Frog_location dw 52960 ;the middle of the first floor line:163,colum:160 
    key db ?
    holes db 64 dup(2h)
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
-   floor db 5                                                   
+   floor db 5h                                                   
    frog db 0Ah,0Eh,2 dup(0Ah),2 dup(0Eh),0Ah                    ;1
         db 2 dup(0Ah),0Ch,0Ah,3 dup(0Eh),0Ah,0Ch, 2 dup(0Ah)      ;2
         db 3 dup(0Ah),3 dup(0Eh),3 dup(0Ah)                     ;3
@@ -16,6 +16,7 @@ data segment
         db 2 dup(0Ah),0Eh,0Ah,3 dup(0Eh),2 dup(0Ah)             ;7
         db 3 dup(0Ah),2 dup(0Eh),4 dup(0Ah)                     ;8
         db 2 dup(0Ah)                                           ;9
+   frog_area db 117 dup(5h)     
         
         
     
@@ -47,6 +48,9 @@ endp Init_Graphic
 ;******************************************************************
 proc Draw_hole
 pusha
+mov ax, 0A000h
+mov es,ax
+
 mov si, offset holes
 
 mov cx,4
@@ -81,6 +85,9 @@ endp Draw_hole
 ;******************************************************************
 proc draw_Floor
     pusha
+    mov ax, 0A000h
+    mov es,ax
+    
     mov cx, 4160 ; 13 lines = 13*320=4160 pixels
     floor_lines:
     mov si, offset floor
@@ -97,12 +104,15 @@ proc draw_Floor
 ;******************************************************************
 proc draw_water
     pusha
-    popa
+    mov ax, 0A000h
+    mov es,ax
+    
     mov cx,20800 ; 65 lines 65*320=20800
     watering:
     mov si, offset water
     movsb
     loop watering 
+    popa
     ret
     endp draw_water 
 ;-----------------------------------------------------------------
@@ -114,6 +124,9 @@ proc draw_water
 ;******************************************************************
 proc draw_frog
     pusha
+    mov ax, 0A000h
+    mov es,ax
+    
     mov di, frog_location
     mov si, offset frog
     ;line:1
@@ -231,6 +244,7 @@ proc draw_screen
      call draw_Floor
      mov di, 52160 ;163*320=52160
      call draw_floor
+     call draw_frog
      
      
      
@@ -242,6 +256,81 @@ proc draw_screen
     endp draw_screen
 ;-----------------------------------------------------------------
 
+;******************************************************************
+;gets a key trough "key" variable
+;moves the frog according to the key
+;updating frog_location variable
+;******************************************************************
+ proc move_frog
+    pusha
+    mov ax, 0A000h
+    mov es,ax
+    
+    
+    mov si,offset frog_area
+    mov di, frog_location  
+    
+    cmp key, 'w'
+     jnz s
+     sub frog_location ,4160 ;13*320
+     jmp moving_proces
+     
+    s: cmp key, 's'
+     jnz a
+     add frog_location ,4160
+     jmp moving_proces
+     
+    a:cmp key, 'a'
+      jnz d
+      sub frog_location ,14
+      jmp moving_proces
+       
+    d:cmp key, 'd'
+      jnz not_wasd
+      add frog_location,14
+      jmp moving_proces
+       
+    ;di previous frog location
+    ;frog_location variable new frog location
+    moving_proces:
+    
+     dec di
+     mov cx,9
+     delete_frog:
+      push cx
+      mov cx,13
+      rep movsb
+      add di,307
+      pop cx
+     loop delete_frog
+     
+     mov si,frog_location
+     dec si
+     mov di, offset frog_area
+     mov ax,0a000h
+     mov ds,ax
+     mov ax,data
+     mov es, ax
+     
+     mov cx,9
+     remember_area:
+      push cx
+      mov cx,13
+      rep movsb
+      add si,307
+      pop cx
+     loop remember_area
+      
+    mov ax ,data
+    mov ds ,ax
+    call draw_frog 
+    
+      
+    not_wasd:Nop
+      
+    popa
+    ret
+    endp move_frog
 
 
 
@@ -257,6 +346,11 @@ start:
     
     call Init_Graphics
     call draw_screen
+    
+    testing:
+     call get_key
+     call move_frog
+    jmp testing
     
     
     mov ax, 4C00h
