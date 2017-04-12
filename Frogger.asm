@@ -7,15 +7,14 @@ data segment
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
    floor db 5h                                                   
-   frog db 0Ah,0Eh,2 dup(0Ah),2 dup(0Eh),0Ah                    ;1
-        db 2 dup(0Ah),0Ch,0Ah,3 dup(0Eh),0Ah,0Ch, 2 dup(0Ah)      ;2
-        db 3 dup(0Ah),3 dup(0Eh),3 dup(0Ah)                     ;3
-        db 2 dup(0Ah),7 dup(0Eh),2 dup(0Ah)                     ;4
-        db 0Eh,0Ah,5 dup(0Eh)                                   ;5
-        db 2 dup(0Ah),0Eh,0Ah,5 dup(0Eh),2 dup(0Ah)             ;6
-        db 2 dup(0Ah),0Eh,0Ah,3 dup(0Eh),2 dup(0Ah)             ;7
-        db 3 dup(0Ah),2 dup(0Eh),4 dup(0Ah)                     ;8
-        db 2 dup(0Ah)                                           ;9
+   frog db 2 dup(0Ah)
+        db 2 dup(0Ah),3h,0Ah,3h,2 dup(0Ah)
+        db 5 dup(0Ah)
+        db 2 dup(0Ah), 3 dup(0Eh), 2 dup(0Ah)
+        db 0Eh,0Ah,0Eh
+        db 2 dup(0Ah),0Eh,0Ah,0Eh,2 dup(0Ah)
+        db 2 dup(0Ah), 3 dup(0Eh), 2 dup(0Ah)
+        db 2 dup(0Ah)                                          
    frog_area db 117 dup(5h)     
         
         
@@ -131,63 +130,52 @@ proc draw_frog
     mov si, offset frog
     ;line:1
     movsb
-    add di,2 ;space of two pixels
-    mov cx,5
-    rep movsb
-    add di,2
+    add di,5
     movsb
     ;line:2
-    add di,308 ;new line
-    movsb
-    movsb
-    add di,1 ;space
-    mov cx,7
+    add di,312
+    mov cx,2
     rep movsb
-    add di,1 ;space
-    movsb
-    movsb
+    inc di
+    mov cx,3
+    rep movsb
+    inc di
+    mov cx,2
+    rep movsb
     ;line:3
-    add di, 308 ;new line
-    movsb 
-    add di,1 ;space
-    mov cx,7
+    add di,312
+    movsb
+    inc di
+    mov cx,3
     rep movsb
-    add di,1
+    inc di
     movsb
     ;line:4
-    add di,309 ;new line
-    mov cx,11
+    add di,313                                                        
+    mov cx,7
     rep movsb
     ;lien:5
-    add di,311 ;new line
-    mov cx,7
+    add di,315
+    mov cx,3
     rep movsb
     ;line:6
-    add di,311 ;new line
-    mov cx,11
-    rep movsb
-    ;line:7
-    add di,309 ;new line
-    movsb
-    add di,1 ;space
+    add di,315
     mov cx,7
     rep movsb
-    add di,1 ;sapce
-    movsb
-    ;line:8
-    add di,308 ;new line
-    movsb
-    movsb
-    add di,2
-    mov cx,5
+    ;line:7
+    add di,312
+    mov cx,2
     rep movsb
-    add di,2
+    inc di
+    mov cx,3
+    rep movsb
+    inc di
+    mov cx,2
+    rep movsb
+    ;line:8
+    add di,312
     movsb
-    movsb
-    ;Line 9
-    add di, 308
-    movsb
-    add di,9
+    add di,5
     movsb
     
     popa
@@ -282,12 +270,12 @@ proc draw_screen
      
     a:cmp key, 'a'
       jnz d
-      sub frog_location ,14
+      sub frog_location ,16
       jmp moving_proces
        
     d:cmp key, 'd'
       jnz not_wasd
-      add frog_location,14
+      add frog_location,16
       jmp moving_proces
        
     ;di previous frog location
@@ -298,9 +286,9 @@ proc draw_screen
      mov cx,9
      delete_frog:
       push cx
-      mov cx,13
+      mov cx,9
       rep movsb
-      add di,307
+      add di,311
       pop cx
      loop delete_frog
      
@@ -315,9 +303,9 @@ proc draw_screen
      mov cx,9
      remember_area:
       push cx
-      mov cx,13
+      mov cx,9
       rep movsb
-      add si,307
+      add si,311
       pop cx
      loop remember_area
       
