@@ -7,14 +7,15 @@ data segment
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
    floor db 5h                                                   
-   frog db 2 dup(0Ah)
-        db 2 dup(0Ah),3h,0Ah,3h,2 dup(0Ah)
-        db 5 dup(0Ah)
-        db 2 dup(0Ah), 3 dup(0Eh), 2 dup(0Ah)
-        db 0Eh,0Ah,0Eh
-        db 2 dup(0Ah),0Eh,0Ah,0Eh,2 dup(0Ah)
-        db 2 dup(0Ah), 3 dup(0Eh), 2 dup(0Ah)
-        db 2 dup(0Ah)                                          
+   frog_up_rest db 2 dup(0Ah)
+                db 2 dup(0Ah),3h,0Ah,3h,2 dup(0Ah)
+                db 5 dup(0Ah)
+                db 2 dup(0Ah), 3 dup(0Eh), 2 dup(0Ah)
+                db 0Eh,0Ah,0Eh
+                db 2 dup(0Ah),0Eh,0Ah,0Eh,2 dup(0Ah)
+                db 2 dup(0Ah), 3 dup(0Eh), 2 dup(0Ah)
+                db 2 dup(0Ah)
+   frog_up_jump db                                                       
    frog_area db 117 dup(5h)     
         
         
@@ -127,7 +128,7 @@ proc draw_frog
     mov es,ax
     
     mov di, frog_location
-    mov si, offset frog
+    mov si, offset frog_up_rest
     ;line:1
     movsb
     add di,5
@@ -190,7 +191,7 @@ endp draw_frog
 
 proc get_key
     pusha
-    mov key,0
+    mov key,-1
     mov ah,1h
     int 16h
     jz skip
@@ -318,7 +319,9 @@ proc draw_screen
       
     popa
     ret
-    endp move_frog
+ endp move_frog
+ 
+ ;--------------------------------------------------------------------------------------------------
 
 
 
