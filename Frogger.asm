@@ -15,7 +15,7 @@ data segment
                 db 2 dup(0Ah),0Eh,0Ah,0Eh,2 dup(0Ah)
                 db 2 dup(0Ah), 3 dup(0Eh), 2 dup(0Ah)
                 db 2 dup(0Ah)
-   frog_up_jump db                                                       
+                                                          
    frog_area db 117 dup(5h)     
         
         
@@ -122,7 +122,7 @@ proc draw_water
 ;gets location to start drawing the frog trough variable frog_location
 ;draws the frog there
 ;******************************************************************
-proc draw_frog
+proc draw_frog_up_rest
     pusha
     mov ax, 0A000h
     mov es,ax
@@ -181,8 +181,20 @@ proc draw_frog
     
     popa
     ret
-endp draw_frog
-;----------------------------------------------------------------- 
+endp draw_frog_up_rest
+;-----------------------------------------------------------------
+
+;******************************************************************
+;draws a car 
+;gets the location for drawing trogh di
+;******************************************************************
+proc draw_car
+    pusha
+    popa
+    ret
+endp draw_car
+
+;-----------------------------------------------------------------
 
 ;******************************************************************
 ;gets nothing
@@ -233,7 +245,7 @@ proc draw_screen
      call draw_Floor
      mov di, 52160 ;163*320=52160
      call draw_floor
-     call draw_frog
+     call draw_frog_up_rest
      
      
      
@@ -243,7 +255,58 @@ proc draw_screen
     popa
     ret
     endp draw_screen
+;----------------------------------------------------------------- 
+
+;******************************************************************
+;gets location to delete area of the frog trogh di
+;delets the area
+;remembers at frog_area variable the area
+;******************************************************************
+proc delete_area
+    pusha
+    mov cx,9
+     delete_frog:
+      push cx
+      mov cx,9
+      rep movsb
+      add di,311
+      pop cx
+     loop delete_frog
+      
+    popa
+    ret
+endp delete_area
 ;-----------------------------------------------------------------
+
+;******************************************************************
+;remebermbers the area of the futre frog
+;gets the start of the area trogh forg_location variable
+;remembers at frog_area variable
+;******************************************************************
+proc remenber_area
+pusha
+ mov si,frog_location
+     dec si
+     mov di, offset frog_area
+     mov ax,0a000h
+     mov ds,ax
+     mov ax,data
+     mov es, ax
+     
+     mov cx,9
+     remember_area:
+      push cx
+      mov cx,9
+      rep movsb
+      add si,311
+      pop cx
+     loop remember_area
+      
+     mov ax ,data
+     mov ds ,ax
+popa
+ret
+endp remenber_area
 
 ;******************************************************************
 ;gets a key trough "key" variable
@@ -257,7 +320,8 @@ proc draw_screen
     
     
     mov si,offset frog_area
-    mov di, frog_location  
+    mov di, frog_location
+      
     
     cmp key, 'w'
      jnz s
@@ -284,35 +348,9 @@ proc draw_screen
     moving_proces:
     
      dec di
-     mov cx,9
-     delete_frog:
-      push cx
-      mov cx,9
-      rep movsb
-      add di,311
-      pop cx
-     loop delete_frog
-     
-     mov si,frog_location
-     dec si
-     mov di, offset frog_area
-     mov ax,0a000h
-     mov ds,ax
-     mov ax,data
-     mov es, ax
-     
-     mov cx,9
-     remember_area:
-      push cx
-      mov cx,9
-      rep movsb
-      add si,311
-      pop cx
-     loop remember_area
-      
-    mov ax ,data
-    mov ds ,ax
-    call draw_frog 
+     call delete_area
+     call remenber_area
+     call draw_frog_up_rest 
     
       
     not_wasd:Nop
@@ -321,7 +359,10 @@ proc draw_screen
     ret
  endp move_frog
  
- ;--------------------------------------------------------------------------------------------------
+ ;-------------------------------------------------------------------------------------------------- 
+ 
+
+ 
 
 
 
