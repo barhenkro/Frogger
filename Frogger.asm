@@ -16,8 +16,17 @@ data segment
                 db 2 dup(0Ah), 3 dup(0Eh), 2 dup(0Ah)
                 db 2 dup(0Ah)
                                                           
-   frog_area db 117 dup(5h)     
-        
+   frog_area db 117 dup(5h)
+   invader db 2 dup(0h),4h, 5 dup(0h) ,4h,2 dup(0h)
+           db 3 dup(0h),4h,3 dup(0h),4h,3 dup(0h)
+           db 2 dup(0h), 7 dup(4h),2 dup(0h)
+           db (0h),2 dup(4h), 0h, 3 dup(4h),0h, 2 dup(4h), 0h
+           db 11 dup(4h)
+           db 4h,0h,7 dup(4h),0h, 4h
+           db 4h,0h,4h, 5 dup(0h), 4h,0h,4h
+           db 3 dup(0h), 2 dup(4h), 0h, 2 dup(4h),3 dup(0h)    
+   car dw 32000 , 2 ,0
+   screen_color db 0h     
         
     
 ends
@@ -185,14 +194,30 @@ endp draw_frog_up_rest
 ;-----------------------------------------------------------------
 
 ;******************************************************************
-;draws a car 
+;draws an invader 
 ;gets the location for drawing trogh di
 ;******************************************************************
-proc draw_car
+proc draw_invader
     pusha
+    mov ax, 0A000h
+    mov es,ax
+    mov si, offset invader 
+    mov cx,8
+    
+    invadering:
+    push cx
+    mov cx,11
+    rep movsb
+    add di,309
+    pop cx
+    loop invadering
+    
+    
+    
+    
     popa
     ret
-endp draw_car
+endp draw_invader
 
 ;-----------------------------------------------------------------
 
@@ -246,6 +271,8 @@ proc draw_screen
      mov di, 52160 ;163*320=52160
      call draw_floor
      call draw_frog_up_rest
+     mov di,48640 
+     call draw_invader
      
      
      
@@ -307,6 +334,7 @@ pusha
 popa
 ret
 endp remenber_area
+;-----------------------------------------------------------------
 
 ;******************************************************************
 ;gets a key trough "key" variable
@@ -360,8 +388,74 @@ endp remenber_area
  endp move_frog
  
  ;-------------------------------------------------------------------------------------------------- 
+ ;***************************************************************
+proc clear_car
+    pusha
+    
+     mov ax, 0A000h
+    mov es,ax
+    ;mov si, offset screen_color 
+    mov cx,8
+    
+    clearing:
+    mov si, offset screen_color
+    push cx
+    mov cx,11
+    rep movsb
+    add di,309
+    pop cx
+    loop clearing
+    popa
+    ret
+endp clear_car
+ ;******************************************************************
+ ;gets an offset of array trogh the stuck and moves the invader once in some seconds
+ ;array[0] = location
+ ;array[1] = waiting time in ticks
+ ;array[2] = previous passed ticks since midnight
+ ;moves the invader and updates the location
+ ;******************************************************************
+ proc move_car
+    
+    mov bp,sp
+    pusha
+    mov bx,[bp+2] ;bx=array[0]
+    
+    xor ax,ax
+    int 1Ah ;dx= current ticks since midnight
+    push dx
+    
+    mov ah, [bx+5]
+    mov al, [bx+4]; ax = array[2] = previous ticks since midnight 
+    sub dx, ax ;dx = diffrence between current and previous ticks since midnight
+    cmp dx, [bx+2]
+    jnc time_passed
+    jc time_notPassed
+    
+    time_passed:
+    pop [bx+4]
+    mov di, [bx]
+    call clear_car
+    add [bx],5
+    mov di, [bx]
+    call draw_invader
+     
+    jmp done
+    
+    time_notPassed:nop
+    pop dx
+    jmp done
+    
+    
+    
+   done: 
+    popa
+    ret 2 
+    endp move_car
  
-
+ 
+ ;--------------------------------------------------------------------------------------------------
+  
  
 
 
@@ -380,6 +474,8 @@ start:
     call draw_screen
     
     testing:
+     push offset car
+     call move_car
      call get_key
      call move_frog
     jmp testing
