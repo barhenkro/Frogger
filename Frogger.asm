@@ -25,7 +25,8 @@ data segment
            db 4h,0h,7 dup(4h),0h, 4h
            db 4h,0h,4h, 5 dup(0h), 4h,0h,4h
            db 3 dup(0h), 2 dup(4h), 0h, 2 dup(4h),3 dup(0h)    
-   car dw 32000 , 2 ,0
+   car dw 31680 , 2 ,0
+   yosi dw 36000,2 ,0 
    screen_color db 0h     
         
     
@@ -48,6 +49,22 @@ proc Init_Graphics
     pop ax
     ret
 endp Init_Graphic
+;-----------------------------------------------------------------
+
+;******************************************************************
+;gets location on the screen trogh ax
+;returns the y axies of the location at ax
+;******************************************************************
+proc GetY
+push dx
+push cx
+xor dx,dx
+mov cx,320
+div cx 
+pop cx
+pop dx
+ret
+endp GetY
 ;-----------------------------------------------------------------
 
 
@@ -271,8 +288,6 @@ proc draw_screen
      mov di, 52160 ;163*320=52160
      call draw_floor
      call draw_frog_up_rest
-     mov di,48640 
-     call draw_invader
      
      
      
@@ -408,6 +423,8 @@ proc clear_car
     popa
     ret
 endp clear_car
+;-------------------------------------------------------------------------------------------------- 
+
  ;******************************************************************
  ;gets an offset of array trogh the stuck and moves the invader once in some seconds
  ;array[0] = location
@@ -429,20 +446,45 @@ endp clear_car
     mov al, [bx+4]; ax = array[2] = previous ticks since midnight 
     sub dx, ax ;dx = diffrence between current and previous ticks since midnight
     cmp dx, [bx+2]
-    jnc time_passed
-    jc time_notPassed
+     jnc time_passed
+     jc time_notPassed
     
-    time_passed:
+   time_passed:
     pop [bx+4]
     mov di, [bx]
     call clear_car
-    add [bx],5
-    mov di, [bx]
-    call draw_invader
-     
-    jmp done
     
-    time_notPassed:nop
+    mov ah,[bx+1]
+    mov al,[bx]
+    push ax
+    push ax
+    call GetY
+    mov dx,ax ;dx = previos y axies 
+    pop ax
+    add ax,5
+    call GetY ; ax= new y axies
+    cmp ax,dx
+    pop ax
+     jz Y_Not_Changed
+     jnz Y_Changed
+    
+    Y_Not_Changed:
+     add ax,5
+     mov [bx],ax
+     mov di, [bx]
+     call draw_invader
+     jmp done
+     
+    Y_Changed:
+     mov ax,dx
+     mov cx,320
+     mul cx
+     mov [bx],ax
+     mov di, [bx]
+     call draw_invader
+     jmp done
+    
+   time_notPassed:nop
     pop dx
     jmp done
     
@@ -475,6 +517,8 @@ start:
     
     testing:
      push offset car
+     call move_car
+     push offset yosi
      call move_car
      call get_key
      call move_frog
