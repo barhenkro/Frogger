@@ -148,7 +148,7 @@ proc draw_water
 ;gets location to start drawing the frog trough variable frog_location
 ;draws the frog there
 ;******************************************************************
-proc draw_frog_up_rest
+proc draw_frog
     pusha
     mov ax, 0A000h
     mov es,ax
@@ -207,7 +207,7 @@ proc draw_frog_up_rest
     
     popa
     ret
-endp draw_frog_up_rest
+endp draw_frog
 ;-----------------------------------------------------------------
 
 ;******************************************************************
@@ -287,7 +287,7 @@ proc draw_screen
      call draw_Floor
      mov di, 52160 ;163*320=52160
      call draw_floor
-     call draw_frog_up_rest
+     call draw_frog
      
      
      
@@ -302,10 +302,13 @@ proc draw_screen
 ;******************************************************************
 ;gets location to delete area of the frog trogh di
 ;delets the area
-;remembers at frog_area variable the area
 ;******************************************************************
 proc delete_area
     pusha
+     mov ax, 0A000h
+     mov es,ax
+     mov si, offset frog_area 
+    dec di
     mov cx,9
      delete_frog:
       push cx
@@ -390,10 +393,10 @@ endp remenber_area
     ;frog_location variable new frog location
     moving_proces:
     
-     dec di
+     
      call delete_area
      call remenber_area
-     call draw_frog_up_rest 
+     call draw_frog 
     
       
     not_wasd:Nop
@@ -496,9 +499,23 @@ endp clear_car
     endp move_car
  
  
- ;--------------------------------------------------------------------------------------------------
-  
+;--------------------------------------------------------------------------------------------------
  
+;******************************************************************
+;kills the frog by moving it to the start
+;******************************************************************
+proc KillFrog
+    pusha
+    mov di,Frog_location
+    call delete_area
+    mov Frog_location, 52960
+    call remenber_area
+    call draw_frog
+    popa
+    ret
+    endp KillFrog
+  
+;-------------------------------------------------------------------------------------------------- 
 
 
 
@@ -516,12 +533,14 @@ start:
     call draw_screen
     
     testing:
+     call get_key
+     call move_frog
      push offset car
      call move_car
      push offset yosi
      call move_car
-     call get_key
-     call move_frog
+     
+     
     jmp testing
     
     
