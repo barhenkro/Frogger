@@ -406,13 +406,15 @@ endp remenber_area
  endp move_frog
  
  ;-------------------------------------------------------------------------------------------------- 
- ;***************************************************************
+;***************************************************************
+;gets a start location trogh di
+;filling a blank (black) in the sizes of the invader
+;***************************************************************
 proc clear_car
     pusha
     
      mov ax, 0A000h
     mov es,ax
-    ;mov si, offset screen_color 
     mov cx,8
     
     clearing:
@@ -471,21 +473,21 @@ endp clear_car
      jz Y_Not_Changed
      jnz Y_Changed
     
-    Y_Not_Changed:
-     add ax,5
-     mov [bx],ax
-     mov di, [bx]
-     call draw_invader
-     jmp done
+     Y_Not_Changed:
+      add ax,5
+      mov [bx],ax
+      mov di, [bx]
+      call draw_invader
+      jmp done
      
-    Y_Changed:
-     mov ax,dx
-     mov cx,320
-     mul cx
-     mov [bx],ax
-     mov di, [bx]
-     call draw_invader
-     jmp done
+     Y_Changed:
+      mov ax,dx
+      mov cx,320
+      mul cx
+      mov [bx],ax
+      mov di, [bx]
+      call draw_invader
+      jmp done
     
    time_notPassed:nop
     pop dx
@@ -517,6 +519,51 @@ proc KillFrog
   
 ;-------------------------------------------------------------------------------------------------- 
 
+;****************************************************************** 
+;check if the frog was ran over by a car
+;******************************************************************
+proc IsCrashed
+    pusha
+    mov ax, 0a000h
+    mov es,ax
+    mov bx, Frog_location
+    
+    cmp es:[bx] , 0Ah
+     jnz Crashed
+    cmp es:[bx+6] , 0Ah
+     jnz Crashed
+    cmp es:[bx+319] , 0Ah
+     jnz Crashed
+    cmp es:[bx+327] , 0Ah
+     jnz Crashed
+    cmp es:[bx+1919] , 0Ah
+     jnz Crashed
+    cmp es:[bx+1927] , 0Ah
+     jnz Crashed
+    cmp es:[bx+2240] , 0Ah
+     jnz Crashed
+    cmp es:[bx+2246] , 0Ah
+     jnz Crashed
+     jmp Didnt_Crashed
+     
+    
+    
+    Crashed:
+     push Frog_location
+     call KillFrog
+     pop di
+     dec di
+     call clear_car
+     
+     
+     
+    Didnt_Crashed: 
+     popa
+     ret
+endp IsCrashed
+;--------------------------------------------------------------------------------------------------
+
+
 
 
 start:
@@ -539,6 +586,7 @@ start:
      call move_car
      push offset yosi
      call move_car
+     call IsCrashed
      
      
     jmp testing
