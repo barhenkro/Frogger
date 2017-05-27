@@ -24,9 +24,28 @@ data segment
            db 11 dup(4h)
            db 4h,0h,7 dup(4h),0h, 4h
            db 4h,0h,4h, 5 dup(0h), 4h,0h,4h
-           db 3 dup(0h), 2 dup(4h), 0h, 2 dup(4h),3 dup(0h)    
-   car dw 31680 , 2 ,0
-   yosi dw 36000,2 ,0 
+           db 3 dup(0h), 2 dup(4h), 0h, 2 dup(4h),3 dup(0h)
+           
+   car db 2 dup(0h),3 dup(0Eh),5 dup(0h),2 dup(0Eh), 3 dup(0h)
+       db 0h, 5 dup(4h), 2 dup(0h) , 5 dup(4h),1h, 0h
+       db 1h, 5 dup(4h),1h,4h, 2 dup(1h),4 dup(4h),1h
+       db 0h,4h,3 dup(1h), 4 dup(4h),2 dup(1h), 2 dup(4h),0Eh,1h
+       db 0h,4h,3 dup(1h), 4 dup(4h),2 dup(1h), 3 dup(4h),1h
+          
+       db 0h,4h,3 dup(1h), 4 dup(4h),2 dup(1h), 3 dup(4h),1h
+       db 0h,4h,3 dup(1h), 4 dup(4h),2 dup(1h), 2 dup(4h),0Eh,1h
+       db 1h, 5 dup(4h),1h,4h, 2 dup(1h),4 dup(4h),1h
+       db 0h, 5 dup(4h), 2 dup(0h) , 5 dup(4h),1h, 0h
+       db 2 dup(0h),3 dup(0Eh),5 dup(0h),2 dup(0Eh), 3 dup(0h)
+   
+               
+   Car1A dw 31680 ,1 ,0 ,2
+   Car1B dw 31780 ,1 ,0 ,2
+   Car1C dw 31880 ,1 ,0 ,2
+   Car3A dw 40065 ,2 ,0 ,3
+   Car3B dw 40115 ,2 ,0 ,3
+   Car3C dw 40165 ,2 ,0 ,3
+   Car3D dw 40215 ,2 ,0 ,3
    screen_color db 0h     
         
     
@@ -211,30 +230,30 @@ endp draw_frog
 ;-----------------------------------------------------------------
 
 ;******************************************************************
-;draws an invader 
+;draws a car 
 ;gets the location for drawing trogh di
 ;******************************************************************
-proc draw_invader
+proc draw_car
     pusha
     mov ax, 0A000h
     mov es,ax
-    mov si, offset invader 
-    mov cx,8
+    mov si, offset car 
+    mov cx,10
     
-    invadering:
+    caring:
     push cx
-    mov cx,11
+    mov cx,15
     rep movsb
-    add di,309
+    add di,305
     pop cx
-    loop invadering
+    loop caring
     
     
     
     
     popa
     ret
-endp draw_invader
+endp draw_car
 
 ;-----------------------------------------------------------------
 
@@ -415,14 +434,14 @@ proc clear_car
     
      mov ax, 0A000h
     mov es,ax
-    mov cx,8
+    mov cx,10
     
     clearing:
     mov si, offset screen_color
     push cx
-    mov cx,11
+    mov cx,15
     rep movsb
-    add di,309
+    add di,305
     pop cx
     loop clearing
     popa
@@ -434,7 +453,8 @@ endp clear_car
  ;gets an offset of array trogh the stuck and moves the invader once in some seconds
  ;array[0] = location
  ;array[1] = waiting time in ticks
- ;array[2] = previous passed ticks since midnight
+ ;array[2] = previous passed ticks since midnight 
+ ;array[3] =pixels per unit of time
  ;moves the invader and updates the location
  ;******************************************************************
  proc move_car
@@ -466,7 +486,7 @@ endp clear_car
     call GetY
     mov dx,ax ;dx = previos y axies 
     pop ax
-    add ax,5
+    add ax,[bx+6]
     call GetY ; ax= new y axies
     cmp ax,dx
     pop ax
@@ -474,10 +494,10 @@ endp clear_car
      jnz Y_Changed
     
      Y_Not_Changed:
-      add ax,5
+      add ax,[bx+6]
       mov [bx],ax
       mov di, [bx]
-      call draw_invader
+      call draw_car
       jmp done
      
      Y_Changed:
@@ -486,7 +506,7 @@ endp clear_car
       mul cx
       mov [bx],ax
       mov di, [bx]
-      call draw_invader
+      call draw_car
       jmp done
     
    time_notPassed:nop
@@ -519,8 +539,6 @@ proc KillFrog
   
 ;-------------------------------------------------------------------------------------------------- 
 
-;****************************************************************** 
-;check if the frog was ran over by a car
 ;******************************************************************
 proc IsCrashed
     pusha
@@ -582,9 +600,20 @@ start:
     testing:
      call get_key
      call move_frog
-     push offset car
+     
+     push offset Car1A
      call move_car
-     push offset yosi
+     push offset Car1B
+     call move_car
+     push offset Car1C
+     call move_car
+     push offset Car3A
+     call move_car
+     push offset Car3B
+     call move_car
+     push offset Car3C
+     call move_car
+     push offset Car3D
      call move_car
      call IsCrashed
      
