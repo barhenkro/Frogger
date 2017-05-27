@@ -42,6 +42,12 @@ data segment
    Car1A dw 31680 ,1 ,0 ,2
    Car1B dw 31780 ,1 ,0 ,2
    Car1C dw 31880 ,1 ,0 ,2
+   
+   Car2A dw 36000 ,2 ,0 ,-4
+   Car2B dw 36075 ,2 ,0 ,-4
+   Car2C dw 35925 ,2 ,0 ,-4
+   Car2D dw 36150 ,2 ,0 ,-4
+   
    Car3A dw 40065 ,2 ,0 ,3
    Car3B dw 40115 ,2 ,0 ,3
    Car3C dw 40165 ,2 ,0 ,3
@@ -486,24 +492,29 @@ endp clear_car
     call GetY
     mov dx,ax ;dx = previos y axies 
     pop ax
-    add ax,[bx+6]
+    add ax,[bx+6] ;moving the car
     call GetY ; ax= new y axies
     cmp ax,dx
-    pop ax
+    pop ax    ;ax = array[0]
      jz Y_Not_Changed
      jnz Y_Changed
     
      Y_Not_Changed:
-      add ax,[bx+6]
+      add ax,[bx+6]  ;moving the car
       mov [bx],ax
       mov di, [bx]
       call draw_car
       jmp done
      
      Y_Changed:
-      mov ax,dx
+      mov ax,dx ;ax=previous y axis
       mov cx,320
-      mul cx
+      mul cx ;ax = start of the line
+       cmp [bx+6],0
+       jns Right
+       add ax,305 
+      
+      Right: 
       mov [bx],ax
       mov di, [bx]
       call draw_car
@@ -601,20 +612,14 @@ start:
      call get_key
      call move_frog
      
-     push offset Car1A
-     call move_car
-     push offset Car1B
-     call move_car
-     push offset Car1C
-     call move_car
-     push offset Car3A
-     call move_car
-     push offset Car3B
-     call move_car
-     push offset Car3C
-     call move_car
-     push offset Car3D
-     call move_car
+    
+     mov cx,11
+     mov ax, offset Car1A
+     move_all_cars:
+      push ax
+      call move_car
+      add ax,8
+     loop move_all_cars  
      call IsCrashed
      
      
