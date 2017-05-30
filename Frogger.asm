@@ -2,6 +2,7 @@
 
 data segment
    Frog_location dw 52960 ;the middle of the first floor line:163,colum:160 
+   lives db 3
    key db ?
    holes db 64 dup(2h)
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
@@ -51,7 +52,18 @@ data segment
    Car3A dw 40065 ,2 ,0 ,3
    Car3B dw 40115 ,2 ,0 ,3
    Car3C dw 40165 ,2 ,0 ,3
-   Car3D dw 40215 ,2 ,0 ,3
+   Car3D dw 40215 ,2 ,0 ,3  
+   
+   Car4A dw 44360 ,2 ,0 ,-4
+   Car4B dw 44285 ,2 ,0 ,-4
+   Car4C dw 44210 ,2 ,0 ,-4
+   Car4D dw 44135 ,2 ,0 ,-4
+   
+   Car5A dw 48440 ,2 ,0 ,5
+   Car5B dw 48520 ,2 ,0 ,5
+   Car5C dw 48600 ,2 ,0 ,5
+   
+   
    screen_color db 0h     
         
     
@@ -282,7 +294,31 @@ proc get_key
     ret 
 endp get_key
 
-;-----------------------------------------------------------------    
+;-----------------------------------------------------------------
+
+;******************************************************************
+;prints the lives on the screen
+;******************************************************************
+proc Print_lives
+    pusha
+    mov dh, 23
+    mov dl, 38
+    mov bh, 0
+    mov ah, 2
+    int 10h 
+    
+    mov al, lives
+    add al, '0'
+    mov bl, 4 
+    mov ah, 0eh  
+    int 10h
+    
+    
+     
+    
+    popa
+    ret
+endp Print_Lives    
 
 
 ;******************************************************************
@@ -295,6 +331,7 @@ proc draw_screen
     mov ax, 0A000h
     mov es,ax
     
+    call Print_lives
     ;drawing holes
     xor di,di   ;line 0 
     mov cx,5
@@ -313,6 +350,7 @@ proc draw_screen
      mov di, 52160 ;163*320=52160
      call draw_floor
      call draw_frog
+    
      
      
      
@@ -539,6 +577,10 @@ endp clear_car
 ;******************************************************************
 proc KillFrog
     pusha
+    ;points
+    dec lives
+    call Print_lives
+    ;drawings
     mov di,Frog_location
     call delete_area
     mov Frog_location, 52960
@@ -608,22 +650,22 @@ start:
     call Init_Graphics
     call draw_screen
     
-    testing:
+   The_Game:
      call get_key
      call move_frog
      
-    
-     mov cx,11
+     ;cars part
+     mov cx,18
      mov ax, offset Car1A
-     move_all_cars:
+    move_all_cars:
       push ax
       call move_car
       add ax,8
-     loop move_all_cars  
+    loop move_all_cars  
      call IsCrashed
-     
-     
-    jmp testing
+     cmp lives,0
+    jnz The_Game
+   ;jmp The_Game
     
     
     mov ax, 4C00h
