@@ -593,7 +593,10 @@ proc KillFrog
 ;-------------------------------------------------------------------------------------------------- 
 
 ;******************************************************************
-proc IsCrashed
+;the procider checks if the the frog was ran over by a car
+;if it does, kill the frog
+;******************************************************************
+proc IsCrashing
     pusha
     mov ax, 0a000h
     mov es,ax
@@ -631,7 +634,33 @@ proc IsCrashed
     Didnt_Crashed: 
      popa
      ret
-endp IsCrashed
+endp IsCrashing
+;--------------------------------------------------------------------------------------------------
+;******************************************************************
+;the procider checks if the the frog  has drown at the water
+;if it does, kill the frog
+;******************************************************************
+
+proc IsDrowning
+    pusha
+    
+    mov ax, 0a000h
+    mov es,ax
+    mov bx, Frog_location
+    mov ah, water 
+    
+    cmp bx,6400 ; if the frog on the holes part
+     js Didnt_Drown 
+    cmp es:[bx-1] , ah; if the frog on the water 
+    jnz Didnt_Drown
+    cmp es:[bx+2247] , ah 
+     jnz Didnt_Drown
+      call KillFrog
+    
+    Didnt_Drown:
+    popa
+    ret
+endp IsDrowning 
 ;--------------------------------------------------------------------------------------------------
 
 
@@ -651,6 +680,7 @@ start:
     call draw_screen
     
    The_Game:
+     call IsDrowning
      call get_key
      call move_frog
      
@@ -662,10 +692,10 @@ start:
       call move_car
       add ax,8
     loop move_all_cars  
-     call IsCrashed
+     call IsCrashing
      cmp lives,0
-    jnz The_Game
-   ;jmp The_Game
+   jnz The_Game
+   
     
     
     mov ax, 4C00h
