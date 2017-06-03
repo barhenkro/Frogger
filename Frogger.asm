@@ -752,8 +752,40 @@ proc clear_log
     ret
 endp clear_log
 ;-------------------------------------------------------------------------------------------------- 
+;***************************************************************
+;check if the frog ontop of the log 
+;gets the location on the screen troght di
+;if it does, moves the frog with the log
+;return 0 in ZF if the frog on top
+;else returns 1
+;***************************************************************
+proc is_ontop
+    pusha 
+    lea si,log
+    mov ax,0a000h
+    mov es,ax
+    mov cx,10
+    compare_line:
+    push cx
+        mov cx,25
+        compare_pixels:
+        cmpsb
+        jnz ontop
+        loop compare_pixels
+        add di,295
+    pop cx
+    loop compare_line
+    jmp end_is_ontop   
+ontop:
+pop cx
 
-;******************************************************************
+
+end_is_ontop:
+popa
+ret            
+endp is_ontop
+;--------------------------------------------------------------------------------------------------
+ ;******************************************************************
  ;gets an offset of array trogh the stuck and moves the invader once in some seconds
  ;array[0] = location
  ;array[1] = waiting time in ticks
@@ -773,6 +805,17 @@ endp clear_log
     push ax
     call check_ticks
     jb done_swiming
+        ;call is_ontop 
+;        jz on_!top
+;            mov di,Frog_location
+;            call delete_area
+;            lea ax,Frog_location
+;            push ax
+;            push [bx+6]
+;            call CheckY
+;            call remember_area
+;            call draw_frog
+        on_!top:
         mov di,[bx]
         call clear_log 
         push bx
