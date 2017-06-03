@@ -492,8 +492,77 @@ proc clear_car
     ret
 endp clear_car
 ;-------------------------------------------------------------------------------------------------- 
+;**********************************************************************************************************************
+;first gets wanted number of ticks to check
+;second  the location of the previous ticks since midnight
+;updates previous ticks
+;use ja if time had passed
+;use jb if time hadn't  passed
+;**********************************************************************************************************************
+proc check_ticks
+    mov bp,sp
+    pusha
+    mov bx,[bp+2]
+    ;[bx] = previous ticks since midnight
+    ;[bp+4] = amount of ticks
+    xor ah, ah
+    int 1Ah
+    ;dx= current ticks since midnight
+    mov ax,dx
+    sub ax,[bx] 
+    ;ax = diffrence between ticks
+    cmp ax, [bp+4] ;if ax>[bp+4] => time had passed
+    jb not_passed
+    mov [bx],dx
+    not_passed:
+    popa 
+    ret 4
+    endp check_ticks
+;----------------------------------------------------------------------------------------------------------------------
+;******************************************************************
+;gets parametes trogh the stack
+;first gets offset of the location on the screen
+;second gets pixels to check when adding 
+;updates the location
+;if Y is changed restarting it to the start of the lline
+;if Y not changed adding pixels to the location 
+;******************************************************************
+  proc CheckY
+    mov bp,sp
+    pusha
+    mov bx,[bp+4]
+    ;[bx] = the location on the screen
+    ;[bp+2] = pixels per unit
+     mov ax, [bx]
+     call GetY
+     mov cx,ax
+     ;cx= y axies of the old location
+     mov ax,[bx]
+     add ax,[bp+2]
+     call GetY
+     mov dx,ax
+     ;dx = y axies of the new location
+     cmp cx,dx
+     jz Y_!changed
+        cmp [bp+2],0
+        jns Right
+        js Left
+            Right:
+            sub [bx],320
+            jmp Y_!changed
+            left:
+            add [bx],320
+            jmp Y_!changed
+        Y_!changed:
+        mov ax,[bp+2]
+        add [bx], ax
+    popa
+    ret 4
+  endp CheckY 
+;----------------------------------------------------------------------------------------------------------------------
+  
 
- ;******************************************************************
+;******************************************************************
  ;gets an offset of array trogh the stuck and moves the invader once in some seconds
  ;array[0] = location
  ;array[1] = waiting time in ticks
@@ -505,66 +574,22 @@ endp clear_car
     
     mov bp,sp
     pusha
-    mov bx,[bp+2] ;bx=array[0]
-    
-    xor ax,ax
-    int 1Ah ;dx= current ticks since midnight
-    push dx
-    
-    mov ah, [bx+5]
-    mov al, [bx+4]; ax = array[2] = previous ticks since midnight 
-    sub dx, ax ;dx = diffrence between current and previous ticks since midnight
-    cmp dx, [bx+2]
-     jnc time_passed
-     jc time_notPassed
-    
-   time_passed:
-    pop [bx+4]
-    mov di, [bx]
-    call clear_car
-    
-    mov ah,[bx+1]
-    mov al,[bx]
+    mov bx,[bp+2]
+    ;[bx] = array[0]
+    push [bx+2]
+    mov ax,bx
+    add ax,4
     push ax
-    push ax
-    call GetY
-    mov dx,ax ;dx = previos y axies 
-    pop ax
-    add ax,[bx+6] ;moving the car
-    call GetY ; ax= new y axies
-    cmp ax,dx
-    pop ax    ;ax = array[0]
-     jz Y_Not_Changed
-     jnz Y_Changed
-    
-     Y_Not_Changed:
-      add ax,[bx+6]  ;moving the car
-      mov [bx],ax
-      mov di, [bx]
-      call draw_car
-      jmp done
-     
-     Y_Changed:
-      mov ax,dx ;ax=previous y axis
-      mov cx,320
-      mul cx ;ax = start of the line
-       cmp [bx+6],0
-       jns Right
-       add ax,305 
-      
-      Right: 
-      mov [bx],ax
-      mov di, [bx]
-      call draw_car
-      jmp done
-    
-   time_notPassed:nop
-    pop dx
-    jmp done
-    
-    
-    
-   done: 
+    call check_ticks
+    jb done_driving
+        mov di,[bx]
+        call clear_car 
+        push bx
+        push [bx+6]
+        call CheckY
+        mov di,[bx]
+        call draw_car
+    done_driving:
     popa
     ret 2 
     endp move_car
