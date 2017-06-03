@@ -1,7 +1,7 @@
 ; multi-segment executable file template.
 
 data segment
-   Frog_location dw 52960 ;the middle of the first floor line:163,colum:160 
+   Frog_location dw 52960 ;the middle of the first floor line:165,colum:160 
    lives db 3
    key db ?
    holes db 64 dup(2h)
@@ -39,6 +39,17 @@ data segment
        db 0h, 5 dup(4h), 2 dup(0h) , 5 dup(4h),1h, 0h
        db 2 dup(0h),3 dup(0Eh),5 dup(0h),2 dup(0Eh), 3 dup(0h)
    
+   
+   log db 1h, 23 dup(0h), 1h
+       db 1h,0h,8h,0h, 20 dup(6h),0h
+       db 0h,3 dup(8h),0h,19 dup(6h), 0h
+       db 2 dup(0h),8h,0h, 20 dup(6h),0h
+       db 0h, 2 dup(8h),0h,20 dup(6h),0h
+       db 2 dup(0h),8h,0h, 20 dup(6h),0h
+       db 0h, 2 dup(8h),0h,20 dup(6h),0h
+       db 2 dup(0h),2 dup(8h),0h,19 dup(6h),0h
+       db 0h,2 dup(8h),0h, 20 dup(6h),0h
+       db 1h,23 dup(0h),1h
                
    Car1A dw 31680 ,1 ,0 ,2
    Car1B dw 31780 ,1 ,0 ,2
@@ -62,6 +73,8 @@ data segment
    Car5A dw 48440 ,2 ,0 ,5
    Car5B dw 48520 ,2 ,0 ,5
    Car5C dw 48600 ,2 ,0 ,5
+   
+   Log5A dw 23010,2,0,3
    
    
    screen_color db 0h     
@@ -444,12 +457,12 @@ endp remenber_area
      
     a:cmp key, 'a'
       jnz d
-      sub frog_location ,16
+      sub frog_location ,15
       jmp moving_proces
        
     d:cmp key, 'd'
       jnz not_wasd
-      add frog_location,16
+      add frog_location,15
       jmp moving_proces
        
     ;di previous frog location
@@ -686,7 +699,95 @@ proc IsDrowning
     popa
     ret
 endp IsDrowning 
+;--------------------------------------------------------------------------------------------------    
+;******************************************************************
+;draws a log 
+;gets the location for drawing trogh di
+;******************************************************************
+proc draw_log
+    pusha
+    mov ax, 0A000h
+    mov es,ax
+    mov si, offset log 
+    mov cx,10
+    
+    loging:
+    push cx
+    mov cx,25
+    rep movsb
+    add di,295
+    pop cx
+    loop loging
+    
+    
+    
+    
+    popa
+    ret
+endp draw_log
+
+;-----------------------------------------------------------------
+;***************************************************************
+;gets a start location trogh di
+;filling water at the sizes of the log
+;***************************************************************
+proc clear_log
+    pusha
+    
+    mov ax, 0A000h
+    mov es,ax
+    mov cx,10
+    clearing_log:
+    push cx
+    mov cx,25
+        log_line:
+        lea si,  water
+        movsb
+        loop log_line
+    add di,295
+    pop cx
+    loop clearing_log
+    
+    popa
+    ret
+endp clear_log
+;-------------------------------------------------------------------------------------------------- 
+
+;******************************************************************
+ ;gets an offset of array trogh the stuck and moves the invader once in some seconds
+ ;array[0] = location
+ ;array[1] = waiting time in ticks
+ ;array[2] = previous passed ticks since midnight 
+ ;array[3] =pixels per unit of time
+ ;moves the invader and updates the location
+ ;******************************************************************
+ proc move_log
+    
+    mov bp,sp
+    pusha
+    mov bx,[bp+2]
+    ;[bx] = array[0]
+    push [bx+2]
+    mov ax,bx
+    add ax,4
+    push ax
+    call check_ticks
+    jb done_swiming
+        mov di,[bx]
+        call clear_log 
+        push bx
+        push [bx+6]
+        call CheckY
+        mov di,[bx]
+        call draw_log
+    done_swiming:
+    popa
+    ret 2 
+    endp move_log
+ 
+ 
 ;--------------------------------------------------------------------------------------------------
+
 
 
 
@@ -705,9 +806,11 @@ start:
     call draw_screen
     
    The_Game:
-     call IsDrowning
      call get_key
      call move_frog
+     lea bx,Log5A
+     push bx
+     call move_log
      
      ;cars part
      mov cx,18
@@ -718,6 +821,7 @@ start:
       add ax,8
     loop move_all_cars  
      call IsCrashing
+     call IsDrowning
      cmp lives,0
    jnz The_Game
    
