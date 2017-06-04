@@ -595,6 +595,17 @@ proc check_ticks
     push ax
     call check_ticks
     jb done_driving
+        ;is is the first time you call the procedere
+        cmp [bx+4],0
+        jnz !first_drive
+        cmp [bx+5],0
+        jnz !first_drive
+            mov di,[bx]
+            call draw_car
+            jmp done_driving
+        
+        
+        !first_drive:
         mov di,[bx]
         call clear_car 
         push bx
@@ -756,8 +767,8 @@ endp clear_log
 ;check if the frog ontop of the log 
 ;gets the location on the screen troght di
 ;if it does, moves the frog with the log
-;return 0 in ZF if the frog on top
-;else returns 1
+;return 1 in ZF if the frog on top
+;else returns 0
 ;***************************************************************
 proc is_ontop
     pusha 
@@ -775,15 +786,18 @@ proc is_ontop
         add di,295
     pop cx
     loop compare_line
+    mov ax,1
     jmp end_is_ontop   
 ontop:
 pop cx
+mov ax,0
 
 
 end_is_ontop:
+cmp ax,0
 popa
 ret            
-endp is_ontop
+endp is_ontop 
 ;--------------------------------------------------------------------------------------------------
  ;******************************************************************
  ;gets an offset of array trogh the stuck and moves the invader once in some seconds
@@ -805,17 +819,16 @@ endp is_ontop
     push ax
     call check_ticks
     jb done_swiming
-        ;call is_ontop 
-;        jz on_!top
-;            mov di,Frog_location
-;            call delete_area
-;            lea ax,Frog_location
-;            push ax
-;            push [bx+6]
-;            call CheckY
-;            call remember_area
-;            call draw_frog
-        on_!top:
+        cmp [bx+4],0
+        jnz !first_swim
+        cmp [bx+5],0
+        jnz !first_swim
+            mov di,[bx]
+            call draw_log
+            jmp done_swiming
+        
+        
+        !first_swim:
         mov di,[bx]
         call clear_log 
         push bx
