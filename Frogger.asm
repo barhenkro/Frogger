@@ -595,17 +595,6 @@ proc check_ticks
     push ax
     call check_ticks
     jb done_driving
-        ;is is the first time you call the procedere
-        cmp [bx+4],0
-        jnz !first_drive
-        cmp [bx+5],0
-        jnz !first_drive
-            mov di,[bx]
-            call draw_car
-            jmp done_driving
-        
-        
-        !first_drive:
         mov di,[bx]
         call clear_car 
         push bx
@@ -812,30 +801,62 @@ endp is_ontop
     mov bp,sp
     pusha
     mov bx,[bp+2]
-    ;[bx] = array[0]
+    ;[bx] = array[0] 
+    
+    mov ax,[bx+4]
+    cmp ax,0
+    jnz !first_swim
+    ;runs at first time
+    ;update previos passed ticks
+    push [bx+2]
+    mov ax,bx
+    add ax,4
+    push ax
+    call check_ticks
+    ;check if  will go down
+    push bx
+    push [bx+6]
+    call CheckY
+    mov di,[bx]
+    call draw_log 
+    jmp done_swiming
+     
+    !first_swim: 
     push [bx+2]
     mov ax,bx
     add ax,4
     push ax
     call check_ticks
     jb done_swiming
-        cmp [bx+4],0
-        jnz !first_swim
-        cmp [bx+5],0
-        jnz !first_swim
-            mov di,[bx]
-            call draw_log
-            jmp done_swiming
-        
-        
-        !first_swim:
+        mov di, [bx]
+        call is_ontop
+         jz frog_detected
         mov di,[bx]
         call clear_log 
         push bx
         push [bx+6]
         call CheckY
         mov di,[bx]
+        call draw_log 
+        jmp  done_swiming
+        
+        
+        frog_detected: 
+        mov di,Frog_location ;delete frog
+        call delete_area
+        mov di,[bx]
+        call clear_log ;delete log
+        push bx        ;draw log
+        push [bx+6]
+        call CheckY
+        mov di,[bx]
         call draw_log
+        lea ax, Frog_location
+        push ax
+        push [bx+6]
+        call CheckY
+        call remenber_area
+        call draw_frog
     done_swiming:
     popa
     ret 2 
