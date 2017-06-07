@@ -542,7 +542,8 @@ proc check_ticks
 ;******************************************************************
   proc CheckY
     mov bp,sp
-    pusha
+    pusha 
+    xor dx,dx
     mov bx,[bp+4]
     ;[bx] = the location on the screen
     ;[bp+2] = pixels per unit
@@ -557,6 +558,7 @@ proc check_ticks
      ;dx = y axies of the new location
      cmp cx,dx
      jz Y_!changed
+        mov dx,1
         cmp [bp+2],0
         jns Right
         js Left
@@ -565,10 +567,14 @@ proc check_ticks
             jmp Y_!changed
             left:
             add [bx],320
-            jmp Y_!changed
+            jmp Y_!changed 
+            
+            
         Y_!changed:
         mov ax,[bp+2]
         add [bx], ax
+        
+    cmp dx,1
     popa
     ret 4
   endp CheckY 
@@ -855,6 +861,10 @@ endp is_ontop
         push ax
         push [bx+6]
         call CheckY
+        jnz Frog_inLine
+        call KillFrog
+        jmp  done_swiming
+        frog_inLine:
         call remenber_area
         call draw_frog
     done_swiming:
