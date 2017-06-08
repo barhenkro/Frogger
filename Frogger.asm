@@ -74,7 +74,7 @@ data segment
    Car5B dw 48520 ,2 ,0 ,5
    Car5C dw 48600 ,2 ,0 ,5
    
-   Log5A dw 23010,2,0,3
+   Log5A dw 23650,2,0,3
    
    
    screen_color db 0h     
@@ -115,7 +115,22 @@ pop cx
 pop dx
 ret
 endp GetY
-;-----------------------------------------------------------------
+;----------------------------------------------------------------
+;******************************************************************
+;gets location on the screen trogh ax
+;returns the x axies of the location at dx
+;******************************************************************
+proc GetX
+push ax
+push cx
+xor dx,dx
+mov cx,320
+div cx 
+pop cx 
+pop ax
+ret
+endp GetX
+;------------------------------------------------------------------
 
 
 ;******************************************************************
@@ -442,7 +457,10 @@ endp remenber_area
     
     
     mov si,offset frog_area
-    mov di, frog_location
+    mov di, frog_location 
+    mov ax,di
+    call GetX ;dx = x axies 
+    call GetY ;ax = y axies
       
     
     cmp key, 'w'
@@ -452,16 +470,22 @@ endp remenber_area
      
     s: cmp key, 's'
      jnz a
+     cmp ax ,165
+     jz not_wasd
      add frog_location ,4160
      jmp moving_proces
      
     a:cmp key, 'a'
-      jnz d
+      jnz d 
+      cmp dx,10
+      jz not_wasd
       sub frog_location ,15
       jmp moving_proces
        
     d:cmp key, 'd'
       jnz not_wasd
+      cmp dx,310
+      jz not_wasd
       add frog_location,15
       jmp moving_proces
        
@@ -694,7 +718,7 @@ proc IsDrowning
     mov ah, water 
     
     cmp bx,6400 ; if the frog on the holes part
-     js Didnt_Drown 
+     jb Didnt_Drown 
     cmp es:[bx-1] , ah; if the frog on the water 
     jnz Didnt_Drown
     cmp es:[bx+2247] , ah 
@@ -900,16 +924,16 @@ start:
      call move_log
      
      ;cars part
-     mov cx,18
-     mov ax, offset Car1A
-    move_all_cars:
-      push ax
-      call move_car
-      add ax,8
-    loop move_all_cars  
-     call IsCrashing
-     call IsDrowning
-     cmp lives,0
+        mov cx,18
+        mov ax, offset Car1A
+        move_all_cars:
+        push ax
+        call move_car
+        add ax,8
+        loop move_all_cars  
+      call IsCrashing
+      ;call IsDrowning
+   cmp lives,0
    jnz The_Game
    
     
