@@ -4,7 +4,8 @@ data segment
    Frog_location dw 52960 ;the middle of the first floor line:165,colum:160 
    lives db 3
    key db ?
-   holes db 64 dup(2h)
+   holes db 0,0,0,0,0
+   hole db 64 dup(2h)
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
    floor db 5h                                                   
@@ -142,7 +143,7 @@ pusha
 mov ax, 0A000h
 mov es,ax
 
-mov si, offset holes
+mov si, offset hole
 
 mov cx,4
 Four_lines:
@@ -419,7 +420,7 @@ endp delete_area
 ;gets the start of the area trogh forg_location variable
 ;remembers at frog_area variable
 ;******************************************************************
-proc remenber_area
+proc remember_area
 pusha
  mov si,frog_location
      dec si
@@ -430,19 +431,19 @@ pusha
      mov es, ax
      
      mov cx,9
-     remember_area:
+     remembering_area:
       push cx
       mov cx,9
       rep movsb
       add si,311
       pop cx
-     loop remember_area
+     loop remembering_area
       
      mov ax ,data
      mov ds ,ax
 popa
 ret
-endp remenber_area
+endp remember_area
 ;-----------------------------------------------------------------
 
 ;******************************************************************
@@ -477,15 +478,19 @@ endp remenber_area
      
     a:cmp key, 'a'
       jnz d 
-      cmp dx,10
+      sub dx,15
+      cmp dx,1
       jz not_wasd
+      js not_wasd
       sub frog_location ,15
       jmp moving_proces
        
     d:cmp key, 'd'
       jnz not_wasd
-      cmp dx,310
+      add dx,15
+      cmp dx,311
       jz not_wasd
+      ja not_wasd
       add frog_location,15
       jmp moving_proces
        
@@ -495,7 +500,7 @@ endp remenber_area
     
      
      call delete_area
-     call remenber_area
+     call remember_area
      call draw_frog 
     
       
@@ -652,7 +657,7 @@ proc KillFrog
     mov di,Frog_location
     call delete_area
     mov Frog_location, 52960
-    call remenber_area
+    call remember_area
     call draw_frog
     popa
     ret
@@ -889,7 +894,7 @@ endp is_ontop
         call KillFrog
         jmp  done_swiming
         frog_inLine:
-        call remenber_area
+        call remember_area
         call draw_frog
     done_swiming:
     popa
@@ -897,12 +902,53 @@ endp is_ontop
     endp move_log
  
  
+;--------------------------------------------------------------------------------------------------   
+
+;******************************************************************
+proc Check_Holes
+    pusha
+    
+    mov ax, 0a000h
+    mov es,ax
+    mov bx, Frog_location
+    mov ah, water
+      
+    cmp bx,6400
+    ja end_check_holes
+    cmp es:[bx-1] , ah; if the frog on the water 
+    jnz place_taken
+    cmp es:[bx+2247] , ah 
+    jnz place_taken
+    
+    mov ax, bx
+    call GetX ; dx= x
+    shr dx,6 ; deviding dx by 64 give the hole number
+    mov bx,dx
+    cmp holes[bx],1
+    jz place_taken
+    jnz place_!taken
+    
+        place_taken:
+        call KillFrog 
+        jmp end_check_holes
+        
+        place_!taken:
+        mov holes[bx] , 1
+        mov Frog_location, 52960
+        call remember_area
+        call draw_frog 
+        jmp end_check_holes
+     
+     
+     
+    
+    end_check_holes:
+    popa
+    ret
+    endp Check_Holes
+
+
 ;--------------------------------------------------------------------------------------------------
-
-
-
-
-
 start:
 ; set segment registers:
     mov ax, data
@@ -933,6 +979,7 @@ start:
         loop move_all_cars  
       call IsCrashing
       ;call IsDrowning
+      call Check_Holes  
    cmp lives,0
    jnz The_Game
    
