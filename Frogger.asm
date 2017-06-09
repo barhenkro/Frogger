@@ -890,12 +890,22 @@ endp is_ontop
         push ax
         push [bx+6]
         call CheckY
-        jnz Frog_inLine
-        call KillFrog
-        jmp  done_swiming
-        frog_inLine:
+        mov ax,Frog_location
+        call GetX
+        mov ax,dx 
+        add dx,[bx+6]
+        cmp dx,311
+        jz frog_!inLine
+        ja frog_!inLine
+        add ax,[bx+6]
+        cmp ax,1
+        jz frog_!inLine
+        js frog_!inLine
         call remember_area
         call draw_frog
+        jmp done_swiming
+         frog_!inLine:
+         call KillFrog
     done_swiming:
     popa
     ret 2 
