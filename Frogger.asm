@@ -8,9 +8,9 @@ data segment
    Lives_Str db "Lives:$"
    score_str db "Score:$"
    GameOver_msg db "Game Over$"
-   GameOver_r db "Restart - press r$"
-   GameOver_quit db "Quit    - press any key$"
-   
+   PlayAgain_msg db "Play Again - press a$"
+   Quit_msg db "Quit - press any othre key$"
+   Win_msg db "You Won$"
    num_str db 6 dup (?)
    key db ?
    holes db 5 dup(0)
@@ -1260,9 +1260,9 @@ proc GameOver_screen
     mov bl, 0Fh
     xor dl,dl
     xor dh,dh
-    lea si ,GameOver_r
+    lea si ,PlayAgain_msg
     call Print_str
-    lea si,GameOver_quit
+    lea si,Quit_msg
     inc dh
     call Print_str
     lea si, GameOver_msg
@@ -1271,7 +1271,47 @@ proc GameOver_screen
     call Print_str
     popa
     ret
-    endp GameOver_screen
+endp GameOver_screen 
+;--------------------------------------------------------------------------------------------------
+;******************************************************************
+;show the game over screen
+;******************************************************************
+proc win_screen
+    pusha
+    call Init_Graphics  
+    mov dl,17
+    mov dh,10
+    mov bl,0Eh
+    lea si, win_msg
+    call Print_str
+    
+    dec dl
+    add dh,2
+    mov bl, 0Eh
+    lea si, score_str
+    call Print_Str
+    mov ax, score
+    call num2str
+    lea si,num_str
+    add dl,6
+    call print_str
+    
+    mov bl, 0Fh
+    xor dl,dl
+    xor dh,dh
+    lea si ,PlayAgain_msg
+    call Print_str
+    lea si,Quit_msg
+    inc dh
+    call Print_str
+
+    
+    
+    popa
+    ret
+endp win_screen
+;--------------------------------------------------------------------------------------------------
+
 start:
 ; set segment registers:
     mov ax, data
@@ -1293,29 +1333,37 @@ start:
      call move_log
      
      ;cars part
-        mov cx,18
-        mov ax, offset Car1A
-        move_all_cars:
+     mov cx,18
+     mov ax, offset Car1A
+     move_all_cars:
         push ax
         call move_car
         add ax,8
-        loop move_all_cars  
-      call IsCrashing
-      ;call IsDrowning
-      call Check_Holes
-      call line_score
-      call update_timer 
-      call Check_win 
-      jz prep_Game 
+     loop move_all_cars  
+     call IsCrashing
+     ;call IsDrowning
+     call Check_Holes
+     call line_score
+     call update_timer 
+     call Check_win 
+     jz win_game 
    cmp lives,0
    jnz The_Game
+   jmp end_game
+   
+   win_game:
+   call win_screen
+   call wait4key
+   cmp key,'a'
+    jz prep_Game 
+        jmp 0ffffh:0000  ;quit the game
    
    end_game:
    call GameOver_screen
    call wait4key 
-   cmp key,'r'
-   jz prep_Game 
-    jmp 0ffffh:0000  ;quit the game
+    cmp key,'a'
+    jz prep_Game 
+        jmp 0ffffh:0000  ;quit the game
     
     
     
