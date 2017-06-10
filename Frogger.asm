@@ -3,6 +3,10 @@
 data segment
    Frog_location dw 52960 ;the middle of the first floor line:165,colum:160 
    lives db 3
+   score dw 0
+   Lives_Str db "Lives:$"
+   score_str db "Score:$" 
+   num_str db 6 dup (?)
    key db ?
    holes db 0,0,0,0,0
    hole db 64 dup(2h)
@@ -326,19 +330,66 @@ endp get_key
 ;-----------------------------------------------------------------
 
 ;******************************************************************
+;gets  string at ds:[si] (end in $)
+;returns his length at cx
+;******************************************************************
+proc Get_Length
+    push si
+    xor cx,cx 
+    counting_length:
+    cmp ds:[si] , '$'
+    jz end_Get_Length
+    inc cx
+    inc si
+    jmp counting_length
+    end_Get_Length:
+    pop si
+    ret 
+    endp Get_Length
+;------------------------------------------------------------------
+
+;******************************************************************
+;gets string at ds:[si]
+;x at dl ,y at dh, color at bl 
+;prints the string
+;******************************************************************
+proc Print_Str
+    pusha
+    push bx
+    xor bh,bh
+    mov ah, 2
+    int 10h  ;set cursor
+
+    pop bx
+    call Get_length
+    Printing:
+    mov al, [si] 
+    mov ah, 0eh  
+    int 10h
+    inc si
+    loop Printing
+    
+    popa
+    ret
+endp Print_Str
+;------------------------------------------------------------------
+
+;******************************************************************
 ;prints the lives on the screen
 ;******************************************************************
 proc Print_lives
     pusha
     mov dh, 23
-    mov dl, 38
-    mov bh, 0
-    mov ah, 2
-    int 10h 
-    
+    mov dl, 32
+    ;mov bh, 0
+;    mov ah, 2
+;    int 10h  
+    mov bl, 4
+    lea si, Lives_Str
+    call Print_Str
     mov al, lives
     add al, '0'
-    mov bl, 4 
+   ; mov bl, 4 
     mov ah, 0eh  
     int 10h
     
@@ -347,7 +398,71 @@ proc Print_lives
     
     popa
     ret
-endp Print_Lives    
+endp Print_Lives
+;------------------------------------------------------------------  
+;******************************************************************
+;prints the points on the screen
+;******************************************************************
+proc Print_score
+    pusha
+    mov dh, 23
+    mov dl, 1
+    ;mov bh, 0
+;    mov ah, 2
+;    int 10h  
+    mov bl, 0Ah
+    lea si, score_str
+    call Print_Str
+    mov ax, score
+    call num2str
+    lea si,num_str
+    mov dl, 7
+    call print_str
+    
+    
+     
+    
+    popa
+    ret
+endp Print_score
+;------------------------------------------------------------------
+;******************************************************************
+;gets number in ax 
+;puts ascii representation  in num_str 
+;******************************************************************
+proc num2str
+    pusha
+    lea si, num_str
+    mov di,si
+    convert:
+        mov cl,10
+        div cl
+        add ah, '0' 
+        mov [si],ah
+        inc si 
+        xor ah, ah 
+        cmp al, 0
+    jnz convert
+    mov [si],'$' 
+    
+    dec si
+    reverse:
+    cmp di,si
+    ja end_num2str
+        mov ah,[si]
+        mov al,[di]
+        mov [si],al
+        mov [di],ah
+        inc di
+        dec si
+        jmp reverse
+    end_num2str:
+    popa
+    ret
+endp num2str 
+;------------------------------------------------------------------
+
+
 
 
 ;******************************************************************
@@ -361,6 +476,7 @@ proc draw_screen
     mov es,ax
     
     call Print_lives
+    call Print_score
     ;drawing holes
     xor di,di   ;line 0 
     mov cx,5
@@ -943,6 +1059,8 @@ proc Check_Holes
         jmp end_check_holes
         
         place_!taken:
+        add score,100
+        call print_score
         mov holes[bx] , 1
         mov Frog_location, 52960
         call remember_area
