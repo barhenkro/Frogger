@@ -4,6 +4,7 @@ data segment
    Frog_location dw 52960 ;the middle of the first floor line:165,colum:160 
    lives db 3
    score dw 0
+   timer dw 58660,0
    Lives_Str db "Lives:$"
    score_str db "Score:$" 
    num_str db 6 dup (?)
@@ -83,7 +84,8 @@ data segment
    Log5A dw 23650,2,0,3
    
    
-   screen_color db 0h     
+   screen_color db 0h
+   timer_color db 0Ah     
         
     
 ends
@@ -411,7 +413,7 @@ proc Print_score
     ;mov bh, 0
 ;    mov ah, 2
 ;    int 10h  
-    mov bl, 0Ah
+    mov bl, 0Eh
     lea si, score_str
     call Print_Str
     mov ax, score
@@ -477,7 +479,8 @@ proc draw_screen
     mov es,ax
     
     call Print_lives
-    call Print_score
+    call Print_score 
+    call restart_timer
     ;drawing holes
     xor di,di   ;line 0 
     mov cx,5
@@ -633,20 +636,20 @@ endp remember_area
 ;filling a blank (black) in the sizes of the invader
 ;***************************************************************
 proc clear_car
-    pusha
-    
-     mov ax, 0A000h
+   pusha
+    mov ax,0A000h
     mov es,ax
     mov cx,10
-    
-    clearing:
-    mov si, offset screen_color
+    width_clearing:
     push cx
-    mov cx,15
-    rep movsb
-    add di,305
-    pop cx
-    loop clearing
+        mov cx,15
+        Length_clearing:
+        lea si,screen_color
+        movsb
+        loop Length_clearing
+    add di,305    
+    pop cx    
+    loop width_clearing
     popa
     ret
 endp clear_car
@@ -771,6 +774,7 @@ proc KillFrog
     dec lives
     call Print_lives
     call restart_lines
+    call restart_timer
     ;drawings
     mov di,Frog_location
     call delete_area
@@ -1064,6 +1068,7 @@ proc Check_Holes
         jmp end_check_holes
         
         place_!taken:
+        call restart_timer
         call restart_lines
         add score,100
         call print_score
@@ -1124,6 +1129,66 @@ proc restart_lines
     popa
     ret
 endp restart_lines    
+;--------------------------------------------------------------------------------------------------
+
+;******************************************************************
+;progress bar
+;******************************************************************
+proc restart_timer
+    pusha
+    mov ax,0A000h
+    mov es,ax 
+    mov timer,58660
+    mov di,58660
+    mov cx,10
+    width_timer:
+    push cx
+        mov cx,120
+        Length_timer:
+        lea si,timer_color
+        movsb
+        loop Length_timer
+    add di,200    
+    pop cx    
+    loop width_timer
+    popa
+    ret
+    endp restart_timer
+;--------------------------------------------------------------------------------------------------  
+;******************************************************************
+;updates the timer
+;******************************************************************
+proc update_timer
+    pusha ;timer[0] =pointer of colum at the timer, timer[1] = last time ticks were updated
+    mov ax,0A000h
+    mov es,ax
+    
+    mov dl,screen_color
+    mov di, timer
+    push 9
+    lea bx ,timer
+    add bx,2
+    push bx
+     call check_ticks
+     jb end_update_timer
+     cmp es:[di], dl
+     jz end_timer
+        mov cx,10
+        clear_colum:
+            lea si,screen_color
+            movsb
+            add di,319
+        loop clear_colum
+        inc timer
+        jmp end_update_timer
+     end_timer:
+     call killFrog   
+        
+    end_update_timer:
+    popa
+    ret
+    endp update_timer  
+;--------------------------------------------------------------------------------------------------
 
 start:
 ; set segment registers:
@@ -1156,7 +1221,8 @@ start:
       call IsCrashing
       ;call IsDrowning
       call Check_Holes
-      call line_score  
+      call line_score
+      call update_timer  
    cmp lives,0
    jnz The_Game
    
