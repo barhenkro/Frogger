@@ -8,7 +8,8 @@ data segment
    score_str db "Score:$" 
    num_str db 6 dup (?)
    key db ?
-   holes db 0,0,0,0,0
+   holes db 5 dup(0)
+   lines db 11 dup(0)
    hole db 64 dup(2h)
          db 20 dup(2h), 24 dup(1h), 20 dup(2h)
    water db 1h       
@@ -769,6 +770,7 @@ proc KillFrog
     ;points
     dec lives
     call Print_lives
+    call restart_lines
     ;drawings
     mov di,Frog_location
     call delete_area
@@ -1031,6 +1033,9 @@ endp is_ontop
 ;--------------------------------------------------------------------------------------------------   
 
 ;******************************************************************
+;checks if there is a frog in one of the holes
+;if does puts 1 in his place at holes array
+;******************************************************************
 proc Check_Holes
     pusha
     
@@ -1059,6 +1064,7 @@ proc Check_Holes
         jmp end_check_holes
         
         place_!taken:
+        call restart_lines
         add score,100
         call print_score
         mov holes[bx] , 1
@@ -1077,6 +1083,48 @@ proc Check_Holes
 
 
 ;--------------------------------------------------------------------------------------------------
+
+;******************************************************************
+;adding pointes to score when getting first time to a line
+;******************************************************************
+proc line_score
+    pusha
+    mov ax,Frog_location
+    cmp ax,6400
+    jb end_line_score
+    cmp ax,52160
+    ja end_line_score
+        call GetY ;ax=y
+        sub ax,20 ;the width of the holes 
+        mov cl,13 ; every 13 pixels on y are a line 
+        div cl ;ax =line number
+        mov bl,al
+        xor bh,bh
+        cmp lines[bx],1
+        jz end_line_score
+        mov lines[bx],1
+        add score,10
+        call Print_score
+    end_line_score:
+    popa
+    ret
+endp line_score 
+;--------------------------------------------------------------------------------------------------
+;******************************************************************
+;restart lines array by setting every cell to 0
+;******************************************************************
+proc restart_lines
+    pusha
+    mov cx ,11
+    lea bx,lines
+    restarting_lines:
+    mov [bx],0
+    inc bx
+    loop restarting_lines
+    popa
+    ret
+endp restart_lines    
+
 start:
 ; set segment registers:
     mov ax, data
@@ -1107,7 +1155,8 @@ start:
         loop move_all_cars  
       call IsCrashing
       ;call IsDrowning
-      call Check_Holes  
+      call Check_Holes
+      call line_score  
    cmp lives,0
    jnz The_Game
    
