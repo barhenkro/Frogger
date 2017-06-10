@@ -6,7 +6,11 @@ data segment
    score dw 0
    timer dw 58660,0
    Lives_Str db "Lives:$"
-   score_str db "Score:$" 
+   score_str db "Score:$"
+   GameOver_msg db "Game Over$"
+   GameOver_r db "Restart - press r$"
+   GameOver_quit db "Quit    - press any key$"
+   
    num_str db 6 dup (?)
    key db ?
    holes db 5 dup(0)
@@ -310,9 +314,23 @@ proc draw_car
 endp draw_car
 
 ;-----------------------------------------------------------------
-
 ;******************************************************************
 ;gets nothing
+;waiting for key press
+;returns retutrns a key trough variable key 
+;******************************************************************
+proc wait4key
+    pusha
+    xor ah,ah
+    int 16h
+    mov key,al
+    popa
+    ret
+endp wait4key
+;-----------------------------------------------------------------
+;******************************************************************
+;gets nothing
+;not waiting for key press
 ;retutrns a key trough variable key
 ;******************************************************************
 
@@ -322,9 +340,10 @@ proc get_key
     mov ah,1h
     int 16h
     jz skip
-    xor ah,ah
-    int 16h
-    mov key,al
+     call wait4key
+   ; xor ah,ah
+;    int 16h
+;    mov key,al
      skip:
     popa
     ret 
@@ -477,10 +496,13 @@ proc draw_screen
     pusha
     mov ax, 0A000h
     mov es,ax
-    
+    ;restarting variables
+    mov lives,3
     call Print_lives
+    mov score,0
     call Print_score 
     call restart_timer
+    call restart_holes
     ;drawing holes
     xor di,di   ;line 0 
     mov cx,5
@@ -1132,7 +1154,7 @@ endp restart_lines
 ;--------------------------------------------------------------------------------------------------
 
 ;******************************************************************
-;progress bar
+;draws progress bar which represents the timer
 ;******************************************************************
 proc restart_timer
     pusha
@@ -1156,7 +1178,8 @@ proc restart_timer
     endp restart_timer
 ;--------------------------------------------------------------------------------------------------  
 ;******************************************************************
-;updates the timer
+;updates the timer by deleting every 0.5 sec colum from the timer
+;timer set at first for 60 sec
 ;******************************************************************
 proc update_timer
     pusha ;timer[0] =pointer of colum at the timer, timer[1] = last time ticks were updated
@@ -1190,6 +1213,65 @@ proc update_timer
     endp update_timer  
 ;--------------------------------------------------------------------------------------------------
 
+;******************************************************************
+; Check if there are frogs at all 5 holes
+;returns 1 in ZF if palyer won, else returns 0
+;******************************************************************
+proc Check_win   
+    pusha
+    mov ax,0
+    lea si, holes
+    mov cx,5
+    scaning_holes:
+    cmp [si],1
+    jnz !all
+    inc si
+    loop scaning_holes 
+    mov ax,1
+    !all:
+    cmp ax,1
+    popa
+    ret
+endp Check_win
+;--------------------------------------------------------------------------------------------------
+
+;******************************************************************
+;setting all holes at holes array to 0
+;******************************************************************
+proc restart_holes
+    pusha
+    mov cx,5
+    lea si, holes
+    restarting_holes:
+        mov [si],0
+        inc si
+    loop restarting_holes
+    popa
+    ret
+    endp restart_holes
+;--------------------------------------------------------------------------------------------------
+
+;******************************************************************
+;show the game over screen
+;******************************************************************
+proc GameOver_screen
+    pusha
+    call Init_Graphics ;clearing the screen
+    mov bl, 0Fh
+    xor dl,dl
+    xor dh,dh
+    lea si ,GameOver_r
+    call Print_str
+    lea si,GameOver_quit
+    inc dh
+    call Print_str
+    lea si, GameOver_msg
+    mov dl,16
+    mov dh,12
+    call Print_str
+    popa
+    ret
+    endp GameOver_screen
 start:
 ; set segment registers:
     mov ax, data
@@ -1199,7 +1281,7 @@ start:
     mov ax, 0A000h
     mov es,ax
     
-    
+   prep_Game: 
     call Init_Graphics
     call draw_screen
     
@@ -1222,14 +1304,19 @@ start:
       ;call IsDrowning
       call Check_Holes
       call line_score
-      call update_timer  
+      call update_timer 
+      call Check_win 
+      jz prep_Game 
    cmp lives,0
    jnz The_Game
    
+   end_game:
+   call GameOver_screen
+   call wait4key 
+   cmp key,'r'
+   jz prep_Game 
+    jmp 0ffffh:0000  ;quit the game
     
-    
-    mov ax, 4C00h
-    int 21h 
     
     
       
