@@ -61,6 +61,17 @@ data segment
        db 2 dup(0h),2 dup(8h),0h,19 dup(6h),0h
        db 0h,2 dup(8h),0h, 20 dup(6h),0h
        db 1h,23 dup(0h),1h
+       
+   log_base db 1h, 4 dup(0)
+            db 1h, 0h,8h,0h,6h
+            db 0h, 3 dup(8h), 0h
+            db 2 dup(0h),8h,0h,6h
+            db 0h, 2 dup(8h), 0h, 6h
+            db 2 dup(0h),8h,0h,6h
+            db 0h, 2 dup(8h), 0h, 6h
+            db 2 dup(0h), 2 dup(8h),0h
+            db 0h, 2 dup(8h),0h,6h
+            db 1h, 4 dup(0h)    
                
    Car1A dw 31680 ,1 ,0 ,2
    Car1B dw 31780 ,1 ,0 ,2
@@ -85,11 +96,12 @@ data segment
    Car5B dw 48520 ,2 ,0 ,5
    Car5C dw 48600 ,2 ,0 ,5
    
-   Log5A dw 23650,2,0,3
+   Log5A dw 23650,1,0,3,55
    
    
    screen_color db 0h
-   timer_color db 0Ah     
+   timer_color db 0Ah
+   wood db 6h     
         
     
 ends
@@ -180,6 +192,24 @@ popa
 ret
 endp Draw_hole
 ;-----------------------------------------------------------------
+;******************************************************************
+;gets location in di to draw the water part 
+;draws 65*320 pixels of water
+;******************************************************************
+proc draw_water
+    pusha
+    mov ax, 0A000h
+    mov es,ax
+    
+    mov cx,20800 ; 65 lines 65*320=20800
+    watering:
+    mov si, offset water
+    movsb
+    loop watering 
+    popa
+    ret
+    endp draw_water 
+;-----------------------------------------------------------------
               
 
 ;******************************************************************
@@ -201,24 +231,6 @@ proc draw_Floor
     endp draw_Floor
 ;-----------------------------------------------------------------
 
-;******************************************************************
-;gets location in di to draw the water part 
-;draws 65*320 pixels of water
-;******************************************************************
-proc draw_water
-    pusha
-    mov ax, 0A000h
-    mov es,ax
-    
-    mov cx,20800 ; 65 lines 65*320=20800
-    watering:
-    mov si, offset water
-    movsb
-    loop watering 
-    popa
-    ret
-    endp draw_water 
-;-----------------------------------------------------------------
 
 
 ;******************************************************************
@@ -879,35 +891,116 @@ proc IsDrowning
     ret
 endp IsDrowning 
 ;--------------------------------------------------------------------------------------------------    
+;;******************************************************************
+;;draws a log 
+;;gets the location for drawing trogh di
+;;******************************************************************
+;proc draw_log
+;    pusha
+;    mov ax, 0A000h
+;    mov es,ax
+;    mov si, offset log 
+;    mov cx,10
+;    
+;    loging:
+;    push cx
+;    mov cx,25
+;    rep movsb
+;    add di,295
+;    pop cx
+;    loop loging
+;    
+;    
+;    
+;    
+;    popa
+;    ret
+;endp draw_log
+;
+;;-----------------------------------------------------------------
+;*******************************************
+;draws log_base on di
+;;*******************************************
+proc draw_log_base
+    pusha
+    mov ax,0A000h
+    mov es,ax
+    lea si, log_base
+    mov cx,10
+    drawing_base:
+        push cx
+        mov cx,5
+        rep movsb
+        add di, 315
+        pop cx
+    loop drawing_base
+    
+    popa
+    ret
+endp draw_log_base
+;------------------------------------------------------
 ;******************************************************************
-;draws a log 
-;gets the location for drawing trogh di
+;draws a log
+;gets in di- location on the screen ,cx - the length of the log (minimum 7)
 ;******************************************************************
 proc draw_log
     pusha
-    mov ax, 0A000h
+    cmp cx,7
+    jnb Length_legal ;minimun length is 7 
+        mov cx,7
+    Length_legal:
+    mov ax,0A000h
     mov es,ax
-    mov si, offset log 
-    mov cx,10
+    call draw_log_base
     
-    loging:
+    sub cx,6
     push cx
-    mov cx,25
-    rep movsb
-    add di,295
+    add di,5 ;width of di was 5
+    push di 
+    log_border:
+        lea si,screen_color
+        ;upper border
+        push di
+        movsb
+        ;lower border 
+        dec si
+        pop di
+        push di
+        add di,2880 ;320*9 =2880  = 9 lines down
+        movsb
+        pop di
+        inc di
+    loop log_border
+    
+    pop di
+    pop cx 
+    add di,320
+    mov ax,cx
+    
+    mov cx,8
+    inside_wood:
+    push cx
+        push di
+        mov cx,ax
+        wood_length:
+        lea si ,wood
+        movsb
+        loop wood_length     
+    lea si, screen_color
+    movsb
+    pop di
+    add di, 320
     pop cx
-    loop loging
-    
-    
-    
-    
+    loop inside_wood   
+ 
     popa
     ret
 endp draw_log
 
-;-----------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 ;***************************************************************
 ;gets a start location trogh di
+;gets the length of the log in cx
 ;filling water at the sizes of the log
 ;***************************************************************
 proc clear_log
@@ -915,15 +1008,18 @@ proc clear_log
     
     mov ax, 0A000h
     mov es,ax
+    mov ax,cx
     mov cx,10
     clearing_log:
     push cx
-    mov cx,25
+    push di
+    mov cx,ax
         log_line:
         lea si,  water
         movsb
         loop log_line
-    add di,295
+    pop di
+    add di,320
     pop cx
     loop clearing_log
     
@@ -931,48 +1027,209 @@ proc clear_log
     ret
 endp clear_log
 ;-------------------------------------------------------------------------------------------------- 
+
+
+;;***************************************************************
+;;gets a start location trogh di
+;;filling water at the sizes of the log
+;;***************************************************************
+;proc clear_log
+;    pusha
+;    
+;    mov ax, 0A000h
+;    mov es,ax
+;    mov cx,10
+;    clearing_log:
+;    push cx
+;    mov cx,25
+;        log_line:
+;        lea si,  water
+;        movsb
+;        loop log_line
+;    add di,295
+;    pop cx
+;    loop clearing_log
+;    
+;    popa
+;    ret
+;endp clear_log
+;;-------------------------------------------------------------------------------------------------- 
+;;***************************************************************
+;;check if the frog ontop of the log 
+;;gets the location on the screen troght di
+;;if it does, moves the frog with the log
+;;return 1 in ZF if the frog on top
+;;else returns 0
+;;***************************************************************
+;proc is_ontop
+;    pusha 
+;    lea si,log
+;    mov ax,0a000h
+;    mov es,ax
+;    mov cx,10
+;    compare_line:
+;    push cx
+;        mov cx,25
+;        compare_pixels:
+;        cmpsb
+;        jnz ontop
+;        loop compare_pixels
+;        add di,295
+;    pop cx
+;    loop compare_line
+;    mov ax,1
+;    jmp end_is_ontop   
+;ontop:
+;pop cx
+;mov ax,0
+;
+;
+;end_is_ontop:
+;cmp ax,0
+;popa
+;ret            
+;endp is_ontop 
+;;--------------------------------------------------------------------------------------------------
 ;***************************************************************
-;check if the frog ontop of the log 
-;gets the location on the screen troght di
-;if it does, moves the frog with the log
+;check if the frog ontop of the base of the log 
+;gets the location on the screen trogh di
 ;return 1 in ZF if the frog on top
 ;else returns 0
 ;***************************************************************
-proc is_ontop
+proc is_ontop_base
     pusha 
-    lea si,log
+    lea si,log_base
     mov ax,0a000h
     mov es,ax
     mov cx,10
-    compare_line:
+    compare_base:
     push cx
-        mov cx,25
-        compare_pixels:
+        mov cx,5
+        compare_base_pixels:
         cmpsb
-        jnz ontop
-        loop compare_pixels
-        add di,295
+        jnz ontop_base
+        loop compare_base_pixels
+        add di,315
     pop cx
-    loop compare_line
+    loop compare_base
     mov ax,1
-    jmp end_is_ontop   
-ontop:
+    jmp end_is_ontop_base   
+ontop_base:
 pop cx
 mov ax,0
 
 
-end_is_ontop:
+end_is_ontop_base:
 cmp ax,0
 popa
 ret            
-endp is_ontop 
+endp is_ontop_base 
 ;--------------------------------------------------------------------------------------------------
- ;******************************************************************
- ;gets an offset of array trogh the stuck and moves the invader once in some seconds
+
+;***************************************************************
+;checks if the frog covers part of the line
+;gets the location on the screen trogh di
+;return 1 in ZF if the frog on top
+;else returns 0
+;***************************************************************
+proc is_ontop_line
+    pusha
+    mov ax,0A000h
+    mov es,ax
+    mov dh,screen_color
+    cmp es:[di],dh
+     jnz true_ontop_line
+    add di, 320
+    mov dh, wood
+    mov cx,8
+     line_pxls:
+        cmp es:[di],dh
+         jnz true_ontop_line
+        add di ,320
+     loop line_pxls
+    
+    mov dh,screen_color
+    cmp es:[di],dh
+     jnz true_ontop_line
+     mov ax,0
+     jmp end_ontop_line
+    
+    true_ontop_line:
+    mov ax,1
+    jmp end_ontop_line
+    
+    end_ontop_line:
+    cmp ax,1
+    popa
+    ret
+endp is_ontop_line 
+;-------------------------------------------------------------------------------------------------- 
+
+;***************************************************************
+;checks if the frog covers part of the final line
+;gets the location on the screen trogh di
+;return 1 in ZF if the frog on top
+;else returns 0
+;***************************************************************
+proc is_ontop_fLine
+    pusha
+    mov ax,0A000h
+    mov es,ax
+    mov ax,1
+    mov dh,screen_color
+    mov cx,8
+    fLine_pxls:
+        add di,320
+        cmp es:[di],dh
+        jnz end_fLine    
+    loop fLine_pxls:
+    mov ax,0
+    
+    end_fLine:
+    cmp ax,1
+    popa
+    ret
+endp is_ontop_fLine
+;--------------------------------------------------------------------------------------------------
+;***************************************************************
+;checks if the frog on the log
+;gets the location on the screen trogh di
+;gets log length in cx
+;return 1 in ZF if the frog on top
+;else returns 0
+;***************************************************************
+proc is_ontop
+    pusha
+    mov ax,1
+    call is_ontop_base
+    jz end_is_ontop
+    
+    add di,5
+    sub cx,6
+    checking_lines:
+        call is_ontop_line
+        jz end_is_ontop
+        inc di
+    loop checking_lines    
+    
+    call is_ontop_fLine
+    jz end_is_ontop
+    mov ax,0
+    
+    end_is_ontop:
+    cmp ax,1
+    popa
+    ret
+endp is_ontop
+
+;--------------------------------------------------------------------------------------------------
+; ;******************************************************************
+ ;gets an offset of array trogh the stuck and moves the log once in some seconds
  ;array[0] = location
  ;array[1] = waiting time in ticks
  ;array[2] = previous passed ticks since midnight 
  ;array[3] =pixels per unit of time
+ ;array[4] = length of the log
  ;moves the invader and updates the location
  ;******************************************************************
  proc move_log
@@ -997,6 +1254,7 @@ endp is_ontop
     push [bx+6]
     call CheckY
     mov di,[bx]
+    mov cx,[bx+8] ;!!!!!!!!!change
     call draw_log 
     jmp done_swiming
      
@@ -1008,14 +1266,17 @@ endp is_ontop
     call check_ticks
     jb done_swiming
         mov di, [bx]
+        mov cx,[bx+8] ;!!!!!!!!!change
         call is_ontop
          jz frog_detected
         mov di,[bx]
+        mov cx,[bx+8] ;!!!!!!!!!change
         call clear_log 
         push bx
         push [bx+6]
         call CheckY
         mov di,[bx]
+        mov cx,[bx+8] ;!!!!!!!!!change
         call draw_log 
         jmp  done_swiming
         
@@ -1024,11 +1285,13 @@ endp is_ontop
         mov di,Frog_location ;delete frog
         call delete_area
         mov di,[bx]
+        mov cx,[bx+8] ;!!!!!!!!!change
         call clear_log ;delete log
         push bx        ;draw log
         push [bx+6]
         call CheckY
         mov di,[bx]
+        mov cx,[bx+8] ;!!!!!!!!!change
         call draw_log
         lea ax, Frog_location
         push ax
@@ -1341,7 +1604,7 @@ start:
         add ax,8
      loop move_all_cars  
      call IsCrashing
-     ;call IsDrowning
+     call IsDrowning
      call Check_Holes
      call line_score
      call update_timer 
