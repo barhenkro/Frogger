@@ -13,7 +13,10 @@ data segment
    Quit_msg db "Quit - press any othre key$"
    Win_msg db "You Won$"
    num_str db 6 dup (?)
-   key db ?
+   key db ? 
+   note dw ?
+   note_due dw ?
+   frog_note_ticks dw 0
    holes db 5 dup(0)
    lines db 11 dup(0)
    hole db 64 dup(2h)
@@ -633,7 +636,8 @@ endp remember_area
       jnz d 
       sub dx,15
       cmp dx,1
-      jna not_wasd
+      jz not_wasd
+      js not_wasd
       mov ax, -15
       jmp moving_proces
        
@@ -657,7 +661,10 @@ endp remember_area
      add frog_location,ax
      call delete_area
      call remember_area
-     call draw_frog 
+     call draw_frog
+     mov note, 5424 
+     call start_playing
+     mov note_due, 3 
     
       
     not_wasd:Nop
@@ -817,6 +824,7 @@ proc KillFrog
     mov Frog_location, 52960
     call remember_area
     call draw_frog
+    call fail_horn
     popa
     ret
     endp KillFrog
@@ -1488,7 +1496,109 @@ proc win_screen
     popa
     ret
 endp win_screen
+;-------------------------------------------------------------------------------------------------- 
+
+;******************************************************************
+;starts playing note in variable note
+;****************************************************************** 
+proc start_playing
+    pusha
+    ; open speaker 
+    in  al, 61h    
+    or  al, 00000011b  
+    out  61h, al    
+    ;change frequency 
+    mov  al, 0B6h 
+    out 43h, al
+    ;playing note
+    mov ax,note 
+    out  42h, al   ; Sending lower byte  
+    mov  al, ah 
+    out 42h, al  ; Sending upper byte 
+    popa
+    ret
+endp start_playing
 ;--------------------------------------------------------------------------------------------------
+
+;******************************************************************
+;stops playing note
+; gets duration in note[2]
+;gets offset to up date ticks in bx
+;******************************************************************
+proc stop_playing
+    pusha 
+    
+    push note_due
+    push bx
+    call Check_ticks
+    jb still_playing
+      call close_speaker
+    
+    
+    still_playing: 
+    popa
+    ret
+endp stop_playing
+;--------------------------------------------------------------------------------------------------
+;******************************************************************
+proc close_speaker
+    pusha 
+    in  al, 61h    
+    and al, 11111100b  
+    out  61h, al
+    popa
+    ret
+    endp close_speaker
+;--------------------------------------------------------------------------------------------------
+;******************************************************************
+;stops the program
+;gets in bx amount of ticks to stop the program
+;******************************************************************
+proc sleep
+    pusha
+    xor ah,ah
+    int 1Ah ;dx=ticks
+    sleeping:
+        push dx
+        int 1Ah
+        mov cx,dx
+        pop dx ;dx= previous ticks, cx= new ticks
+        sub cx,dx; cx = diffrence
+        cmp cx,bx
+    jna sleeping:    
+    popa
+    ret
+    endp sleep
+;--------------------------------------------------------------------------------------------------
+
+;******************************************************************
+;sound fail horn for 30 ticks while pausing the program
+;******************************************************************
+proc fail_horn
+    pusha
+    mov note,14480
+    call start_playing
+    mov bx,5
+    call sleep
+
+    mov note,12913
+    call start_playing
+    call sleep
+
+    mov note,14480
+    call start_playing
+    call sleep
+
+    mov note,9669
+    call start_playing
+    mov bx,15
+    call sleep
+    call close_speaker
+    popa
+    ret
+endp fail_horn
+;--------------------------------------------------------------------------------------------------
+
 
 start:
 ; set segment registers:
@@ -1506,6 +1616,8 @@ start:
    The_Game:
      call get_key
      call move_frog
+     lea bx,frog_note_ticks
+     call stop_playing
      lea bx,Log5A
      push bx
      call move_log
