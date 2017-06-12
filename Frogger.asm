@@ -2,6 +2,7 @@
 
 data segment
    Frog_location dw 52960 ;the middle of the first floor line:165,colum:160 
+   Frog_ticks dw 0
    lives db 3
    score dw 0
    timer dw 58660,0
@@ -609,50 +610,51 @@ endp remember_area
     pusha
     mov ax, 0A000h
     mov es,ax
-    
-    
+
     mov si,offset frog_area
     mov di, frog_location 
     mov ax,di
     call GetX ;dx = x axies 
     call GetY ;ax = y axies
       
-    
     cmp key, 'w'
      jnz s
-     sub frog_location ,4160 ;13*320
+     mov ax,-4160
      jmp moving_proces
      
     s: cmp key, 's'
      jnz a
      cmp ax ,165
      jz not_wasd
-     add frog_location ,4160
+     mov ax,4160
      jmp moving_proces
      
     a:cmp key, 'a'
       jnz d 
       sub dx,15
       cmp dx,1
-      jz not_wasd
-      js not_wasd
-      sub frog_location ,15
+      jna not_wasd
+      mov ax, -15
       jmp moving_proces
        
     d:cmp key, 'd'
       jnz not_wasd
       add dx,15
       cmp dx,311
-      jz not_wasd
-      ja not_wasd
-      add frog_location,15
+      jnb not_wasd
+      mov ax,15
       jmp moving_proces
        
     ;di previous frog location
     ;frog_location variable new frog location
     moving_proces:
-    
+     push 2
+     lea bx, Frog_ticks
+     push bx
+     call check_ticks
+     jb not_wasd
      
+     add frog_location,ax
      call delete_area
      call remember_area
      call draw_frog 
@@ -891,33 +893,6 @@ proc IsDrowning
     ret
 endp IsDrowning 
 ;--------------------------------------------------------------------------------------------------    
-;;******************************************************************
-;;draws a log 
-;;gets the location for drawing trogh di
-;;******************************************************************
-;proc draw_log
-;    pusha
-;    mov ax, 0A000h
-;    mov es,ax
-;    mov si, offset log 
-;    mov cx,10
-;    
-;    loging:
-;    push cx
-;    mov cx,25
-;    rep movsb
-;    add di,295
-;    pop cx
-;    loop loging
-;    
-;    
-;    
-;    
-;    popa
-;    ret
-;endp draw_log
-;
-;;-----------------------------------------------------------------
 ;*******************************************
 ;draws log_base on di
 ;;*******************************************
@@ -1029,67 +1004,7 @@ endp clear_log
 ;-------------------------------------------------------------------------------------------------- 
 
 
-;;***************************************************************
-;;gets a start location trogh di
-;;filling water at the sizes of the log
-;;***************************************************************
-;proc clear_log
-;    pusha
-;    
-;    mov ax, 0A000h
-;    mov es,ax
-;    mov cx,10
-;    clearing_log:
-;    push cx
-;    mov cx,25
-;        log_line:
-;        lea si,  water
-;        movsb
-;        loop log_line
-;    add di,295
-;    pop cx
-;    loop clearing_log
-;    
-;    popa
-;    ret
-;endp clear_log
-;;-------------------------------------------------------------------------------------------------- 
-;;***************************************************************
-;;check if the frog ontop of the log 
-;;gets the location on the screen troght di
-;;if it does, moves the frog with the log
-;;return 1 in ZF if the frog on top
-;;else returns 0
-;;***************************************************************
-;proc is_ontop
-;    pusha 
-;    lea si,log
-;    mov ax,0a000h
-;    mov es,ax
-;    mov cx,10
-;    compare_line:
-;    push cx
-;        mov cx,25
-;        compare_pixels:
-;        cmpsb
-;        jnz ontop
-;        loop compare_pixels
-;        add di,295
-;    pop cx
-;    loop compare_line
-;    mov ax,1
-;    jmp end_is_ontop   
-;ontop:
-;pop cx
-;mov ax,0
-;
-;
-;end_is_ontop:
-;cmp ax,0
-;popa
-;ret            
-;endp is_ontop 
-;;--------------------------------------------------------------------------------------------------
+
 ;***************************************************************
 ;check if the frog ontop of the base of the log 
 ;gets the location on the screen trogh di
