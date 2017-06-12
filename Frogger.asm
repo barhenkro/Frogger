@@ -100,7 +100,27 @@ data segment
    Car5B dw 48520 ,2 ,0 ,5
    Car5C dw 48600 ,2 ,0 ,5
    
-   Log5A dw 23650,1,0,3,55
+   Log5A dw 23425,1,0,-2,30
+   Log5B dw 23500,1,0,-2,30
+   Log5C dw 23575,1,0,-2,30
+   Log5D dw 23650,1,0,-2,30
+   
+   Log4A dw 19245,1,0,2,30
+   Log4B dw 19295,1,0,2,30
+   Log4C dw 19370,1,0,2,30
+   
+   Log3A dw 15090,2,0,-5,60
+   Log3B dw 15290,2,0,-5,60
+   
+   Log2A dw 10905,1,0,3,20
+   Log2B dw 10955,1,0,3,20
+   Log2C dw 11005,1,0,3,20
+   Log2D dw 11055,1,0,3,20 
+   
+   Log1A dw 6795,2,0,-4,40
+   Log1B dw 6870,2,0,-4,40
+   Log1C dw 6945,2,0,-4,40
+   
    
    
    screen_color db 0h
@@ -1617,10 +1637,16 @@ start:
      call get_key
      call move_frog
      lea bx,frog_note_ticks
-     call stop_playing
-     lea bx,Log5A
-     push bx
-     call move_log
+     call stop_playing 
+     
+     mov cx,16
+     mov ax, offset Log5A
+     move_all_logs:
+        push ax
+        call move_Log
+        add ax,10
+     loop move_all_logs 
+     
      
      ;cars part
      mov cx,18
@@ -1629,7 +1655,8 @@ start:
         push ax
         call move_car
         add ax,8
-     loop move_all_cars  
+     loop move_all_cars
+       
      call IsCrashing
      call IsDrowning
      call Check_Holes
