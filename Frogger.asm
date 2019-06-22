@@ -10,7 +10,7 @@ data segment
    score_str db "Score:$"
    GameOver_msg db "Game Over$"
    PlayAgain_msg db "Play Again - press a$"
-   Quit_msg db "Quit - press any othre key$"
+   Quit_msg db "Quit - press any other key$"
    Win_msg db "You Won$"
    num_str db 6 dup (?)
    key db ? 
@@ -1475,6 +1475,16 @@ proc GameOver_screen
     mov dl,16
     mov dh,12
     call Print_str
+    
+    add dh,2
+    mov bl, 0Eh
+    lea si, score_str
+    call Print_Str
+    mov ax, score
+    call num2str
+    lea si,num_str
+    add dl,6
+    call print_str
     popa
     ret
 endp GameOver_screen 
